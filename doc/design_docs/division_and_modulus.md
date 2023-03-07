@@ -191,7 +191,7 @@ form:
 
     {x ∈ ℤ | (min ≤ x ∨ min = -infinity) ∧
              (x ≤ max ∨ max = infinity) ∧
-             x MOD m = n ∧
+             x ≡ n (MOD m) ∧
              0 ≤ n < m ∧
              min ∈ ℤ ∪ {-infinity} ∧
              max ∈ ℤ ∪ {infinity} ∧
@@ -206,7 +206,7 @@ constant value equal to `n`.
 This will have to change to something like:
 
     {x ∈ ℤ ∪ {undefined} | ((can_be_undefined ∧ x = undefined) ∨
-                            (min ≤ x ≤ max ∧ x MOD m = n)) ∧
+                            (min ≤ x ≤ max ∧ x ≡ n (MOD m))) ∧
                            0 ≤ n < m ∧
                            can_be_undefined ∈ 𝔹 ∧
                            min ∈ ℤ ∪ {-infinity, undefined} ∧

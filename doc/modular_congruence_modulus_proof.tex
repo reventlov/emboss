@@ -1,0 +1,116 @@
+%This proof is used in Emboss to propagate alignment restrictions through
+%the modulus operator "%": if a and b are integers, then a % b can still have a
+%known alignment.
+%
+%Forgive me on the details and formatting, math majors, I never completed my
+%math degree.  --bolms
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amssymb,amsmath,amsthm}
+\title{Modular Congruence of the Flooring Division Remainder of Two Values with Known Modular Congruences}
+\author{Emboss Authors}
+\date{2023}
+
+\begin{document}
+\maketitle
+
+\newtheorem{theorem}{Theorem}
+
+%(Draft)
+
+\begin{theorem}
+Given
+
+\begin{align*}
+  &{a} \equiv {r} \pmod{{m}} \\
+  &{b} \equiv {s} \pmod{{n}} \\
+  &{b} \neq 0 \\
+  &{a}, {r}, {m}, {b}, {s}, {n} \in \mathbb{Z}
+\end{align*}
+
+then
+
+\begin{align}
+  &{a} - \left\lfloor\dfrac{{a}}{{b}}\right\rfloor{b} \equiv {r} \pmod{G\left({m}, {n}, {s}\right)} \label{eq:result}
+\end{align}
+
+where $G$ is the greatest common divisor function.
+\end{theorem}
+
+\begin{proof}
+\begin{align}
+  \text{Let } {q} &= G\left({m}, {n}, {s}\right) \label{eq:qdef}
+\end{align}
+
+by the definition of modular congruence:
+\begin{align}
+  \exists {x} \in \mathbb{Z} : {a} &= {m}{x} + {r} \label{eq:aexpand} \\
+  \exists {y} \in \mathbb{Z} : {b} &= {n}{y} + {s} \label{eq:bexpand}
+\end{align}
+
+further, let:
+\begin{align}
+  &{z} = \dfrac{{m}}{{q}}{x} - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left(\dfrac{{n}}{{q}}{y} + \dfrac{{s}}{{q}}\right)
+\end{align}
+
+by the definition of $G$ and the definition of $q$ \eqref{eq:qdef}:
+\begin{align}
+  &\dfrac{{m}}{{q}}, \dfrac{{n}}{{q}}, \dfrac{{s}}{{q}} \in \mathbb{Z} \label{eq:gcdint}
+\end{align}
+
+because the result of the floor function is an integer by definition:
+\begin{align}
+  &\left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor \in \mathbb{Z} \label{eq:floorint}
+\end{align}
+
+from \eqref{eq:aexpand}, \eqref{eq:bexpand}, and \eqref{eq:gcdint}, because the product of two integers is an integer:
+\begin{align}
+  &\dfrac{{m}}{{q}}{x}, \dfrac{{n}}{{q}}{y} \in \mathbb{Z} \label{eq:mqxnqyint}
+\end{align}
+
+from \eqref{eq:gcdint} and \eqref{eq:mqxnqyint} because the sum of two integers is an integer:
+\begin{align}
+  &\dfrac{{n}}{{q}}{y} + \dfrac{{s}}{{q}} \in \mathbb{Z} \label{eq:nqysqint}
+\end{align}
+
+from \eqref{eq:floorint} and \eqref{eq:nqysqint} because the product of two integers is an integer:
+\begin{align}
+  &\left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left(\dfrac{{n}}{{q}}{y} + \dfrac{{s}}{{q}}\right) \in \mathbb{Z} \label{eq:prodint}
+\end{align}
+
+from \eqref{eq:mqxnqyint} and \eqref{eq:prodint} because the sum of two integers is an integer:
+\begin{align}
+  &\dfrac{{m}}{{q}}{x} - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left(\dfrac{{n}}{{q}}{y} + \dfrac{{s}}{{q}}\right) \in \mathbb{Z} \\
+  &{z} \in \mathbb{Z} \label{eq:zint}
+\end{align}
+
+factoring $\dfrac{1}{{q}}$ out of \eqref{eq:qdef}:
+\begin{align}
+  &{z} = \dfrac{{m}{x} - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left({n}{y} + {s}\right)}{{q}}
+\end{align}
+
+
+substituting \eqref{eq:qdef}, \eqref{eq:aexpand}, and \eqref{eq:bexpand} into \eqref{eq:result}:
+\begin{align}
+  &({m}{x} + {r}) - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor({n}{y} + {s}) \equiv {r} \pmod{q} \label{eq:expandresult}
+\end{align}
+
+by the definition of modular congruence, \eqref{eq:expandresult} is
+equivalent to:
+\begin{align}
+  &\exists {w} \in \mathbb{Z} : ({m}{x} + {r}) - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor({n}{y} + {s}) = {q}{w} + {r} \label{eq:wdef}
+\end{align}
+
+taking $w = z$:
+\begin{align}
+  {q}{w} + {r} &= {q}{z} + {r} \\
+               &= {q}\dfrac{{m}{x} - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left({n}{y} + {s}\right)}{{q}} + {r} \\
+               &= {m}{x} - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor\left({n}{y} + {s}\right) + {r} \\
+               &= ({m}{x} + {r}) - \left\lfloor\dfrac{{m}{x} + {r}}{{n}{y} + {s}}\right\rfloor({n}{y} + {s}) \label{eq:qwrsolution}
+\end{align}
+
+because $z \in \mathbb{Z}$ \eqref{eq:zint} and \eqref{eq:qwrsolution}, \eqref{eq:wdef} is true, so \eqref{eq:result} is true.
+
+\end{proof}
+\end{document}

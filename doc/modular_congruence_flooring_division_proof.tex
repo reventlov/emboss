@@ -1,0 +1,81 @@
+%This proof is used in Emboss to propagate alignment restrictions through
+%the flooring division operator "//": if a and b are integers and b is a
+%constant, then a // b can still have a known alignment.
+%
+%Forgive me on the details and formatting, math majors, I never completed my
+%math degree.  --bolms
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amssymb,amsmath,amsthm}
+\title{Modular Congruence of Flooring Division of a Value with Known Modular Congruence by a Constant}
+\author{Emboss Authors}
+\date{2023}
+
+\begin{document}
+\maketitle
+
+\newtheorem{theorem}{Theorem}
+
+%(Draft)
+
+\begin{theorem}
+Given
+
+\begin{align*}
+  &{a} \equiv {r} \pmod{{m}} \\
+  &{b} \neq 0 \\
+  &{a}, {r}, {m}, {b}, {s}, {n} \in \mathbb{Z} \\
+  &\dfrac{{m}}{{b}} \in \mathbb{Z}
+\end{align*}
+
+then
+
+\begin{align}
+  &\left\lfloor\dfrac{{a}}{{b}}\right\rfloor \equiv \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \pmod{\dfrac{{m}}{{b}}} \label{eq:result}
+\end{align}
+\end{theorem}
+
+\begin{proof}
+By the definition of modular congruence:
+\begin{align}
+  &\exists {x} \in \mathbb{Z} : {a} = {m}{x} + {r} \label{eq:aexpand} \\
+  &\left\lfloor\dfrac{{a}}{{b}}\right\rfloor \equiv \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \pmod{\dfrac{{m}}{{b}}} \Leftrightarrow \exists {z} \in \mathbb{Z} : \left\lfloor\dfrac{{a}}{{b}}\right\rfloor = \dfrac{{m}}{{b}}{z} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \\
+  &\left\lfloor\dfrac{{a}}{{b}}\right\rfloor \equiv \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \pmod{\dfrac{{m}}{{b}}} \Leftrightarrow \exists {x}, {z} \in \mathbb{Z} : \left\lfloor\dfrac{{m}{x} + {r}}{{b}}\right\rfloor = \dfrac{{m}}{{b}}{z} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \label{eq:resultexpand}
+\end{align}
+
+given that $\dfrac{{m}}{{b}} \in \mathbb{Z}$ and that the product of two integers is an integer:
+\begin{align}
+  \dfrac{{m}}{{b}}{x} \in \mathbb{Z} \label{eq:mxbint}
+\end{align}
+
+by the known property of \textit{floor}:
+\begin{align}
+  \forall {n} \in \mathbb{Z} : \lfloor{c} + {n}\rfloor = \lfloor{c}\rfloor + {n}
+\end{align}
+
+and \eqref{eq:mxbint}:
+\begin{align}
+  \left\lfloor\dfrac{{m}{x} + {r}}{{b}}\right\rfloor
+    &= \left\lfloor\dfrac{{m}{x}}{{b}} + \dfrac{{r}}{{b}}\right\rfloor \\
+    &= \left\lfloor\dfrac{{m}}{{b}}{x} + \dfrac{{r}}{{b}}\right\rfloor \\
+    &= \dfrac{{m}}{{b}}{x} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \label{eq:floorintextract}
+\end{align}
+
+substituting \eqref{eq:floorintextract} into \eqref{eq:resultexpand}:
+\begin{align}
+  &\left\lfloor\dfrac{{a}}{{b}}\right\rfloor \equiv \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \pmod{\dfrac{{m}}{{b}}} \Leftrightarrow \exists {x}, {z} \in \mathbb{Z} : \dfrac{{m}}{{b}}{x} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor = \dfrac{{m}}{{b}}{z} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor
+\end{align}
+
+choosing an arbitrary integer $n$ for $x$ and $z$ specializes the left equation:
+\begin{align}
+  \dfrac{{m}}{{b}}{n} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor = \dfrac{{m}}{{b}}{n} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \Rightarrow
+  \exists {x}, {z} \in \mathbb{Z} : \dfrac{{m}}{{b}}{x} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor = \dfrac{{m}}{{b}}{z} + \left\lfloor\dfrac{{r}}{{b}}\right\rfloor \label{eq:tautology}
+\end{align}
+
+since the equation on the left of \eqref{eq:tautology} is a tautology, the
+equation on the right of \eqref{eq:tautology} is true.  By
+\eqref{eq:resultexpand}, this implies that \eqref{eq:result} is true.
+
+\end{proof}
+\end{document}

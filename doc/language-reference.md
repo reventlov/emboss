@@ -222,6 +222,33 @@ this module.
 The `namespace` attribute may only be used at the module level; all structures
 and enums within a module will be placed in the same namespace.
 
+### `(cpp) enum_case`
+
+The `enum_case` attribute can be specified for the C++ backend to specify
+in which case the enum values should be emitted to generated source. It does
+not change the text representation, which always uses the original emboss
+definition name as the canonical name.
+
+Currently, the supported cases are`SHOUTY_CASE` and `kCamelCase`.
+
+A `$default` enum case can be set on a module, struct, bits, or enum and
+applies to all enum values within that module, struct, bits, or enum
+definition.
+
+For example, to use `kCamelCase` by default for all enum values in a module:
+
+```
+[$default enum_case: "kCamelCase"]
+```
+
+This will change enum names like `UPPER_CHANNEL_RANGE_LIMIT` to
+`kUpperChannelRangeLimit` in the C++ source for all enum values in the module.
+Multiple case names can be specified, which is especially useful when
+transitioning between two cases:
+
+```
+[enum_case: "SHOUTY_CASE, kCamelCase"]
+```
 
 ### `text_output`
 
@@ -592,6 +619,20 @@ struct Message:
 This can be useful as a way to group related fields together.
 
 
+#### Using `struct` to define a C-like `union`
+
+Emboss doesn't support C-like `union`s directly via built in type
+definitions. However, you can use Emboss's overlapping fields feature to
+effectively create a `union`:
+
+```
+struct Foo:
+  0 [+1] UInt a
+  0 [+2] UInt b
+  0 [+4] UInt c
+```
+
+
 #### Automatically-Generated Fields
 
 A `struct` will have `$size_in_bytes`, `$max_size_in_bytes`, and
@@ -610,7 +651,7 @@ struct Outer:
 ```
 
 
-##### `$size_in_bytes` {#size-in-bytes}
+##### `$size_in_bytes`
 
 An Emboss `struct` has an *intrinsic* size, which is the size required to hold
 every field in the `struct`, regardless of how many bytes are in the buffer that
@@ -661,7 +702,7 @@ struct Envelope2:
 ```
 
 
-##### `$max_size_in_bytes` {#max-size-in-bytes}
+##### `$max_size_in_bytes`
 
 The `$max_size_in_bytes` virtual field is a constant value that is at least as
 large as the largest possible value for `$size_in_bytes`.  In most cases, it
@@ -679,7 +720,7 @@ struct PaddedContainer:
 ```
 
 
-##### `$min_size_in_bytes` {#min-size-in-bytes}
+##### `$min_size_in_bytes`
 
 The `$min_size_in_bytes` virtual field is a constant value that is no larger
 than the smallest possible value for `$size_in_bytes`.  In most cases, it will
@@ -890,63 +931,6 @@ the entire field to be read or written -- something to keep in mind when reading
 or writing a memory-mapped register space.
 
 
-#### Automatically-Generated Fields
-
-A `bits` will have `$size_in_bits`, `$max_size_in_bits`, and `$min_size_in_bits`
-virtual fields automatically generated.  These virtual fields can be referenced
-inside the Emboss language just like any other virtual field:
-
-```
-bits Inner:
-  0 [+4]  UInt  field_a
-  4 [+4]  UInt  field_b
-
-struct Outer:
-  0 [+1]                      UInt   message_type
-  if message_type == 4:
-    4 [+Inner.$size_in_bits]  Inner  payload
-```
-
-
-##### `$size_in_bits` {#size-in-bits}
-
-Like a `struct`, an Emboss `bits` has an *intrinsic* size, which is the size
-required to hold every field in the `bits`, regardless of how many bits are
-in the buffer that backs the `bits`.  For example:
-
-```
-bits FixedSize:
-  0 [+3]  UInt  long_field
-  3 [+1]  Flag  short_field
-```
-
-In this case, `FixedSize.$size_in_bits` will always be `4`, even if a
-`FixedSize` is placed in a larger field:
-
-```
-struct Envelope:
-  # padded_payload.$size_in_bits == FixedSize.$size_in_bits == 4
-  0 [+8]  FixedSize  padded_payload
-```
-
-Unlike `struct`s, the size of `bits` must known at compile time; there are no
-dynamic `$size_in_bits` fields.
-
-
-##### `$max_size_in_bits` {#max-size-in-bits}
-
-Since `bits` must be fixed size, the `$max_size_in_bits` field has the same
-value as `$size_in_bits`.  It is provided for consistency with
-`$max_size_in_bytes`.
-
-
-##### `$min_size_in_bits` {#min-size-in-bits}
-
-Since `bits` must be fixed size, the `$min_size_in_bits` field has the same
-value as `$size_in_bits`.  It is provided for consistency with
-`$min_size_in_bytes`.
-
-
 #### Anonymous `bits`
 
 It is possible to use an anonymous `bits` definition directly in a `struct`;
@@ -1000,6 +984,63 @@ struct Message:
 ```
 
 This can be useful as a way to group related fields together.
+
+
+#### Automatically-Generated Fields
+
+A `bits` will have `$size_in_bits`, `$max_size_in_bits`, and `$min_size_in_bits`
+virtual fields automatically generated.  These virtual fields can be referenced
+inside the Emboss language just like any other virtual field:
+
+```
+bits Inner:
+  0 [+4]  UInt  field_a
+  4 [+4]  UInt  field_b
+
+struct Outer:
+  0 [+1]                      UInt   message_type
+  if message_type == 4:
+    4 [+Inner.$size_in_bits]  Inner  payload
+```
+
+
+##### `$size_in_bits`
+
+Like a `struct`, an Emboss `bits` has an *intrinsic* size, which is the size
+required to hold every field in the `bits`, regardless of how many bits are
+in the buffer that backs the `bits`.  For example:
+
+```
+bits FixedSize:
+  0 [+3]  UInt  long_field
+  3 [+1]  Flag  short_field
+```
+
+In this case, `FixedSize.$size_in_bits` will always be `4`, even if a
+`FixedSize` is placed in a larger field:
+
+```
+struct Envelope:
+  # padded_payload.$size_in_bits == FixedSize.$size_in_bits == 4
+  0 [+8]  FixedSize  padded_payload
+```
+
+Unlike `struct`s, the size of `bits` must known at compile time; there are no
+dynamic `$size_in_bits` fields.
+
+
+##### `$max_size_in_bits`
+
+Since `bits` must be fixed size, the `$max_size_in_bits` field has the same
+value as `$size_in_bits`.  It is provided for consistency with
+`$max_size_in_bytes`.
+
+
+##### `$min_size_in_bits`
+
+Since `bits` must be fixed size, the `$min_size_in_bits` field has the same
+value as `$size_in_bits`.  It is provided for consistency with
+`$min_size_in_bytes`.
 
 
 ### `external`
@@ -1137,15 +1178,15 @@ Emboss operators have the following precedence (tightest binding to loosest
 binding):
 
 1.  `()` `$max()` `$present()` `$upper_bound()` `$lower_bound()`
-2.  unary `+` and `-` ([see note 1](#precedence-note-unary-plus-minus))
+2.  unary `+` and `-` ([see note 1](#note-1-unary-plusminus-precedence))
 3.  `*`
 4.  `+` `-`
-5.  `<` `>` `==` `!=` `>=` `<=` ([see note 2](#precedence-note-comparisons))
-6.  `&&` `||` ([see note 3](#precedence-note-and-or))
-7.  `?:` ([see note 4](#precedence-note-choice))
+5.  `<` `>` `==` `!=` `>=` `<=` ([see note 2](#note-2-chained-and-mixed-comparisons))
+6.  `&&` `||` ([see note 3](#note-3-logical-andor-precedence))
+7.  `?:` ([see note 4](#note-4-choice-operator-precedence))
 
 
-###### Note 1 {#precedence-note-unary-plus-minus}
+###### Note 1 (Unary Plus/Minus Precedence)
 
 Only one unary `+` or `-` may be applied to an expression without parentheses.
 These expressions are valid:
@@ -1166,7 +1207,7 @@ These are not:
 ```
 
 
-###### Note 2 {#precedence-note-comparisons}
+###### Note 2 (Chained and Mixed Comparisons)
 
 The relational operators may be chained like so:
 
@@ -1199,7 +1240,7 @@ A chain may contain either `<`, `<=`, and/or `==`, or `>`, `>=`, and/or `==`.
 Greater-than comparisons may not be mixed with less-than comparisons.
 
 
-###### Note 3 {#precedence-note-and-or}
+###### Note 3 (Logical And/Or Precedence)
 
 The boolean logical operators have the same precedence, but may not be mixed
 without parentheses.  The following are allowed:
@@ -1219,7 +1260,7 @@ x && y || z
 ```
 
 
-###### Note 4 {#precedence-note-choice}
+###### Note 4 (Choice Operator Precedence)
 
 The choice operator `?:` may not be chained without parentheses.  These are OK:
 

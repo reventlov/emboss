@@ -74,7 +74,7 @@ template <typename CharT, ::std::size_t kBits>
 struct MemoryAccessor<CharT, 1, 0, kBits> {
   static_assert(kBits % 8 == 0,
                 "MemoryAccessor can only read and write whole-byte values.");
-  static_assert(IsChar<CharT>::value,
+  static_assert(IsAliasSafe<CharT>::value,
                 "MemoryAccessor can only be used on pointers to char types.");
 
   using Unsigned = typename LeastWidthInteger<kBits>::Unsigned;
@@ -323,7 +323,8 @@ class ContiguousBuffer final {
   // unlikely that any compiler vendor will actually change it, as there is
   // probably enough real-world code that relies on uint8_t being allowed to
   // alias.
-  static_assert(IsChar<Byte>::value, "ContiguousBuffer requires char type.");
+  static_assert(IsAliasSafe<Byte>::value,
+                "ContiguousBuffer requires char type.");
 
   // Because real-world processors only care about power-of-2 alignments,
   // ContiguousBuffer only supports power-of-2 alignments.  Note that
@@ -378,12 +379,12 @@ class ContiguousBuffer final {
   template <
       typename T,
       typename = typename ::std::enable_if<
-          IsChar<typename ::std::remove_cv<typename ::std::remove_reference<
-              decltype(*(::std::declval<T>().data()))>::type>::type>::value
-              && ::std::is_same<
-                  typename AddSourceCV<decltype(*::std::declval<T>().data()),
-                                       Byte>::Type,
-                  Byte>::value>::type>
+          IsAliasSafe<typename ::std::remove_cv<
+              typename ::std::remove_reference<decltype(*(
+                  ::std::declval<T>().data()))>::type>::type>::value && ::std::
+              is_same<typename AddSourceCV<
+                          decltype(*::std::declval<T>().data()), Byte>::Type,
+                      Byte>::value>::type>
   explicit ContiguousBuffer(T *bytes)
       : bytes_{reinterpret_cast<Byte *>(bytes->data())}, size_{bytes->size()} {
     if (bytes != nullptr)
@@ -393,10 +394,10 @@ class ContiguousBuffer final {
   // Constructs a ContiguousBuffer from a pointer to a char type and a size.  As
   // with the constructor from a container, above, Byte must be at least as
   // cv-qualified as T.
-  template <
-      typename T,
-      typename = typename ::std::enable_if<IsChar<T>::value && ::std::is_same<
-          typename AddSourceCV<T, Byte>::Type, Byte>::value>>
+  template <typename T,
+            typename = typename ::std::enable_if<
+                IsAliasSafe<T>::value && ::std::is_same<
+                    typename AddSourceCV<T, Byte>::Type, Byte>::value>>
   explicit ContiguousBuffer(T *bytes, ::std::size_t size)
       : bytes_{reinterpret_cast<Byte *>(bytes)},
         size_{bytes == nullptr ? 0 : size} {
@@ -410,9 +411,9 @@ class ContiguousBuffer final {
   // TODO(bolms): Update callers and remove this constructor.
   explicit ContiguousBuffer(::std::nullptr_t) : bytes_{nullptr}, size_{0} {}
 
-  // Implicitly constructs a ContiguousBuffer from an identical
-  // ContiguousBuffer.
+  // Implicitly construct or assign a ContiguousBuffer from a ContiguousBuffer.
   ContiguousBuffer(const ContiguousBuffer &other) = default;
+  ContiguousBuffer& operator=(const ContiguousBuffer& other) = default;
 
   // Explicitly construct a ContiguousBuffers from another, compatible
   // ContiguousBuffer.  A compatible ContiguousBuffer has an
@@ -437,6 +438,35 @@ class ContiguousBuffer final {
       const ContiguousBuffer<OtherByte, kOtherAlignment, kOtherOffset> &other)
       : bytes_{reinterpret_cast<Byte *>(other.data())},
         size_{other.SizeInBytes()} {}
+
+  // Compare a ContiguousBuffers to another, compatible ContiguousBuffer.
+  template <typename OtherByte, ::std::size_t kOtherAlignment,
+            ::std::size_t kOtherOffset,
+            typename = typename ::std::enable_if<
+                kOtherAlignment % kAlignment == 0 &&
+                kOtherOffset % kAlignment ==
+                    kOffset && ::std::is_same<
+                        typename AddSourceCV<OtherByte, Byte>::Type,
+                        Byte>::value>::type>
+  bool operator==(const ContiguousBuffer<OtherByte, kOtherAlignment,
+                                         kOtherOffset> &other) const {
+    return bytes_ == reinterpret_cast<Byte *>(other.data()) &&
+           size_ == other.SizeInBytes();
+  }
+
+  // Compare a ContiguousBuffers to another, compatible ContiguousBuffer.
+  template <typename OtherByte, ::std::size_t kOtherAlignment,
+            ::std::size_t kOtherOffset,
+            typename = typename ::std::enable_if<
+                kOtherAlignment % kAlignment == 0 &&
+                kOtherOffset % kAlignment ==
+                    kOffset && ::std::is_same<
+                        typename AddSourceCV<OtherByte, Byte>::Type,
+                        Byte>::value>::type>
+  bool operator!=(const ContiguousBuffer<OtherByte, kOtherAlignment,
+                                         kOtherOffset> &other) const {
+    return !(*this == other);
+  }
 
   // Assignment from a compatible ContiguousBuffer.
   template <typename OtherByte, ::std::size_t kOtherAlignment,
@@ -632,7 +662,7 @@ class ContiguousBuffer final {
   // depending on the behavior of the given string type.
   template <typename String>
   typename ::std::enable_if<
-      IsChar<typename ::std::remove_reference<
+      IsAliasSafe<typename ::std::remove_reference<
           decltype(*::std::declval<String>().data())>::type>::value,
       String>::type
   ToString() const {

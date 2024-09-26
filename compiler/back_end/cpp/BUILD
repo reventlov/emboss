@@ -14,6 +14,9 @@
 
 # Emboss C++ code generator.
 
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
 load(":build_defs.bzl", "emboss_cc_test")
 
 package(
@@ -30,8 +33,14 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":header_generator",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
     ],
+)
+
+py_library(
+    name = "attributes",
+    srcs = ["attributes.py"],
+    deps = [],
 )
 
 py_library(
@@ -41,10 +50,23 @@ py_library(
         "generated_code_templates",
     ],
     deps = [
+        ":attributes",
         "//compiler/back_end/util:code_template",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:attribute_util",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:name_conversion",
+        "//compiler/util:resources",
+    ],
+)
+
+py_test(
+    name = "header_generator_test",
+    srcs = ["header_generator_test.py"],
+    deps = [
+        ":header_generator",
+        "//compiler/front_end:glue",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -104,6 +126,17 @@ emboss_cc_test(
 )
 
 emboss_cc_test(
+    name = "enum_case_test",
+    srcs = [
+        "testcode/enum_case_test.cc",
+    ],
+    deps = [
+        "//testdata:enum_case_emboss",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+emboss_cc_test(
     name = "explicit_sizes_test",
     srcs = [
         "testcode/explicit_sizes_test.cc",
@@ -121,6 +154,17 @@ emboss_cc_test(
     ],
     deps = [
         "//testdata:importer_emboss",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+emboss_cc_test(
+    name = "importer2_test",
+    srcs = [
+        "testcode/importer2_test.cc",
+    ],
+    deps = [
+        "//testdata:importer2_emboss",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -176,6 +220,17 @@ emboss_cc_test(
     ],
     deps = [
         "//testdata:auto_array_size_emboss",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+emboss_cc_test(
+    name = "no_enum_traits_test",
+    srcs = [
+        "testcode/no_enum_traits_test.cc",
+    ],
+    deps = [
+        "//testdata:no_enum_traits_emboss",
         "@com_google_googletest//:gtest_main",
     ],
 )

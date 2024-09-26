@@ -14,15 +14,33 @@
 
 # Shared utilities for Emboss back ends.
 
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+
 package(
     default_visibility = ["//compiler:__subpackages__"],
 )
 
 py_library(
-    name = "ir_pb2",
+    name = "ir_data",
     srcs = [
-        "ir_pb2.py",
+        "ir_data.py",
+        "ir_data_fields.py",
+        "ir_data_utils.py",
     ],
+    deps = [],
+)
+
+py_test(
+    name = "ir_data_fields_test",
+    srcs = ["ir_data_fields_test.py"],
+    deps = [":ir_data"],
+)
+
+py_test(
+    name = "ir_data_utils_test",
+    srcs = ["ir_data_utils_test.py"],
+    deps = [":expression_parser", ":ir_data"],
 )
 
 py_library(
@@ -38,7 +56,7 @@ py_library(
 py_library(
     name = "ir_util",
     srcs = ["ir_util.py"],
-    deps = [":ir_pb2"],
+    deps = [":ir_data"],
 )
 
 py_test(
@@ -47,8 +65,19 @@ py_test(
     python_version = "PY3",
     deps = [
         ":expression_parser",
+        ":ir_data",
         ":ir_util",
-        ":ir_pb2",
+    ],
+)
+
+py_library(
+    name = "attribute_util",
+    srcs = ["attribute_util.py"],
+    deps = [
+        ":error",
+        ":ir_data",
+        ":ir_util",
+        ":traverse_ir",
     ],
 )
 
@@ -68,11 +97,29 @@ py_test(
 )
 
 py_library(
+    name = "test_util",
+    testonly = 1,
+    srcs = ["test_util.py"],
+    deps = [],
+)
+
+py_test(
+    name = "test_util_test",
+    srcs = ["test_util_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":test_util",
+        "//compiler/util:ir_data",
+        "//compiler/util:parser_types",
+    ],
+)
+
+py_library(
     name = "traverse_ir",
     srcs = ["traverse_ir.py"],
     deps = [
         ":simple_memoizer",
-        ":ir_pb2",
+        ":ir_data",
     ],
 )
 
@@ -82,7 +129,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":traverse_ir",
-        ":ir_pb2",
+        ":ir_data",
     ],
 )
 
@@ -90,7 +137,7 @@ py_library(
     name = "parser_types",
     srcs = ["parser_types.py"],
     deps = [
-        ":ir_pb2",
+        ":ir_data",
     ],
 )
 
@@ -100,7 +147,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":parser_types",
-        ":ir_pb2",
+        ":ir_data",
     ],
 )
 
@@ -137,4 +184,10 @@ py_test(
     deps = [
         ":name_conversion",
     ],
+)
+
+py_library(
+    name = "resources",
+    srcs = ["resources.py"],
+    deps = [],
 )

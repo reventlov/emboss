@@ -18,6 +18,10 @@
 # intermediate representation (IR).  The IR is passed to back end code
 # generators to generate code in various languages.
 
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+
 package(
     default_visibility = [
         "//:__subpackages__",
@@ -66,7 +70,7 @@ py_library(
     name = "module_ir",
     srcs = ["module_ir.py"],
     deps = [
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
         "//compiler/util:name_conversion",
         "//compiler/util:parser_types",
     ],
@@ -82,9 +86,9 @@ py_test(
     deps = [
         ":module_ir",
         ":parser",
-        ":test_util",
         ":tokenizer",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -98,6 +102,7 @@ py_library(
         ":lr1",
         ":module_ir",
         ":tokenizer",
+        "//compiler/util:resources",
         "//compiler/util:simple_memoizer",
     ],
 )
@@ -110,25 +115,6 @@ py_test(
         ":lr1",
         ":parser",
         ":tokenizer",
-        "//compiler/util:parser_types",
-    ],
-)
-
-py_library(
-    name = "test_util",
-    testonly = 1,
-    srcs = ["test_util.py"],
-    deps = [
-    ],
-)
-
-py_test(
-    name = "test_util_test",
-    srcs = ["test_util_test.py"],
-    python_version = "PY3",
-    deps = [
-        ":test_util",
-        "//compiler/util:ir_pb2",
         "//compiler/util:parser_types",
     ],
 )
@@ -153,9 +139,10 @@ py_library(
         ":tokenizer",
         ":type_check",
         ":write_inference",
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:parser_types",
+        "//compiler/util:resources",
     ],
 )
 
@@ -168,10 +155,10 @@ py_test(
     python_version = "PY3",
     deps = [
         ":glue",
-        ":test_util",
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:parser_types",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -180,8 +167,8 @@ py_library(
     srcs = ["synthetics.py"],
     visibility = ["//visibility:private"],
     deps = [
-        "//compiler/util:ir_pb2",
         "//compiler/util:expression_parser",
+        "//compiler/util:ir_data",
         "//compiler/util:traverse_ir",
     ],
 )
@@ -193,7 +180,7 @@ py_test(
     deps = [
         ":glue",
         ":synthetics",
-        ":test_util",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -202,8 +189,8 @@ py_library(
     srcs = ["symbol_resolver.py"],
     visibility = ["//visibility:private"],
     deps = [
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -213,12 +200,11 @@ py_test(
     name = "symbol_resolver_test",
     srcs = ["symbol_resolver_test.py"],
     python_version = "PY3",
-    shard_count = 8,
     deps = [
         ":glue",
         ":symbol_resolver",
-        ":test_util",
         "//compiler/util:error",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -229,7 +215,7 @@ py_library(
     deps = [
         ":attributes",
         ":expression_bounds",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -239,12 +225,11 @@ py_test(
     name = "write_inference_test",
     srcs = ["write_inference_test.py"],
     python_version = "PY3",
-    shard_count = 8,
     deps = [
         ":glue",
-        ":test_util",
         ":write_inference",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -254,8 +239,9 @@ py_library(
     deps = [
         ":attributes",
         ":type_check",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:attribute_util",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -272,14 +258,13 @@ py_test(
     timeout = "long",
     srcs = ["attribute_checker_test.py"],
     python_version = "PY3",
-    shard_count = 16,
     deps = [
         ":attribute_checker",
         ":glue",
-        ":test_util",
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -288,8 +273,8 @@ py_library(
     srcs = ["type_check.py"],
     deps = [
         ":attributes",
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -299,12 +284,11 @@ py_test(
     name = "type_check_test",
     srcs = ["type_check_test.py"],
     python_version = "PY3",
-    shard_count = 8,
     deps = [
         ":glue",
-        ":test_util",
         ":type_check",
         "//compiler/util:error",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -316,7 +300,7 @@ py_library(
     ],
     deps = [
         ":attributes",
-        "//compiler/util:ir_pb2",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -326,11 +310,10 @@ py_test(
     name = "expression_bounds_test",
     srcs = ["expression_bounds_test.py"],
     python_version = "PY3",
-    shard_count = 4,
     deps = [
         ":expression_bounds",
         ":glue",
-        ":test_util",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -342,9 +325,10 @@ py_library(
     ],
     deps = [
         ":attributes",
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
+        "//compiler/util:resources",
         "//compiler/util:traverse_ir",
     ],
 )
@@ -353,12 +337,11 @@ py_test(
     name = "constraints_test",
     srcs = ["constraints_test.py"],
     python_version = "PY3",
-    shard_count = 8,
     deps = [
         ":constraints",
         ":glue",
-        ":test_util",
         "//compiler/util:error",
+        "//compiler/util:test_util",
     ],
 )
 
@@ -366,8 +349,8 @@ py_library(
     name = "dependency_checker",
     srcs = ["dependency_checker.py"],
     deps = [
-        "//compiler/util:ir_pb2",
         "//compiler/util:error",
+        "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
     ],
@@ -377,12 +360,11 @@ py_test(
     name = "dependency_checker_test",
     srcs = ["dependency_checker_test.py"],
     python_version = "PY3",
-    shard_count = 8,
     deps = [
         ":dependency_checker",
         ":glue",
-        ":test_util",
         "//compiler/util:error",
+        "//compiler/util:test_util",
     ],
 )
 

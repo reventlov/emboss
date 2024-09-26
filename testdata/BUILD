@@ -14,7 +14,12 @@
 
 # Shared test data for Emboss.
 
-load("//:build_defs.bzl", "emboss_cc_library")
+load(
+    "//:build_defs.bzl",
+    "cc_emboss_library",
+    "emboss_cc_library",
+    "emboss_library",
+)
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -23,17 +28,18 @@ package(
 filegroup(
     name = "golden_files",
     srcs = [
+        "golden/__init__.py",
         "golden/span_se_log_file_status.emb",
         "golden/span_se_log_file_status.ir.txt",
         "golden/span_se_log_file_status.parse_tree.txt",
         "golden/span_se_log_file_status.tokens.txt",
-        "golden/__init__.py",
     ],
 )
 
 filegroup(
     name = "test_embs",
     srcs = [
+        "__init__.py",
         "absolute_cpp_namespace.emb",
         "anonymous_bits.emb",
         "bcd.emb",
@@ -43,22 +49,24 @@ filegroup(
         "cpp_namespace.emb",
         "dynamic_size.emb",
         "enum.emb",
+        "enum_case.emb",
         "explicit_sizes.emb",
         "float.emb",
+        "import_dir/project/imported.emb",
+        "import_dir/project/importer.emb",
         "imported.emb",
         "imported_genfiles.emb",
         "importer.emb",
         "int_sizes.emb",
         "nested_structure.emb",
-        "no_cpp_namespace.emb",
         "next_keyword.emb",
+        "no_cpp_namespace.emb",
         "parameters.emb",
         "requires.emb",
         "subtypes.emb",
         "text_format.emb",
         "uint_sizes.emb",
         "virtual_field.emb",
-        "__init__.py",
     ],
 )
 
@@ -67,10 +75,17 @@ filegroup(
     srcs = glob(["format/**"]),
 )
 
-emboss_cc_library(
-    name = "span_se_log_file_status_emboss",
+emboss_library(
+    name = "span_se_log_file_status_emb_ir",
     srcs = [
         "golden/span_se_log_file_status.emb",
+    ],
+)
+
+cc_emboss_library(
+    name = "span_se_log_file_status_emboss",
+    deps = [
+        ":span_se_log_file_status_emb_ir",
     ],
 )
 
@@ -93,6 +108,16 @@ emboss_cc_library(
     srcs = [
         "enum.emb",
     ],
+    # This tag is arbitrary, and exists to ensure you can pass attributes common
+    # to all build rules to the underlying rules.
+    tags = ["an_arbitrary_tag"],
+)
+
+emboss_cc_library(
+    name = "enum_case_emboss",
+    srcs = [
+        "enum_case.emb",
+    ],
 )
 
 emboss_cc_library(
@@ -106,6 +131,13 @@ emboss_cc_library(
     name = "imported_emboss",
     srcs = [
         "imported.emb",
+    ],
+)
+
+emboss_cc_library(
+    name = "import_dir_imported_emboss",
+    srcs = [
+        "import_dir/project/imported.emb",
     ],
 )
 
@@ -143,6 +175,30 @@ emboss_cc_library(
     deps = [
         ":imported_emboss",
         ":imported_genfiles_emboss",
+    ],
+)
+
+# Tests that the `import_dirs` attribute works.
+emboss_cc_library(
+    name = "import_dir_importer_emboss",
+    srcs = [
+        "import_dir/project/importer.emb",
+    ],
+    import_dirs = [
+        "import_dir",
+    ],
+    deps = [
+        ":import_dir_imported_emboss",
+    ],
+)
+
+emboss_cc_library(
+    name = "importer2_emboss",
+    srcs = [
+        "importer2.emb",
+    ],
+    deps = [
+        ":importer_emboss",
     ],
 )
 
@@ -186,6 +242,14 @@ emboss_cc_library(
     srcs = [
         "auto_array_size.emb",
     ],
+)
+
+emboss_cc_library(
+    name = "no_enum_traits_emboss",
+    srcs = [
+        "no_enum_traits.emb",
+    ],
+    enable_enum_traits = False,
 )
 
 emboss_cc_library(

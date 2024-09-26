@@ -22,12 +22,16 @@
 #include <type_traits>
 
 #include "runtime/cpp/emboss_arithmetic.h"
-#include "runtime/cpp/emboss_array_view.h"
-#include "runtime/cpp/emboss_text_util.h"
 
 namespace emboss {
 
 // Forward declarations for use by WriteShorthandArrayCommentToTextStream.
+class TextOutputOptions;
+namespace support {
+template <class Array, class Stream>
+void WriteShorthandAsciiArrayCommentToTextStream(
+    const Array *array, Stream *stream, const TextOutputOptions &options);
+}
 namespace prelude {
 template <class Parameters, class BitViewType>
 class UIntView;
@@ -50,9 +54,9 @@ class ElementViewIterator {
   using pointer = typename ::std::add_pointer<value_type>::type;
   using reference = typename ::std::add_lvalue_reference<value_type>::type;
 
-  explicit ElementViewIterator(const GenericArrayView *array_view,
+  explicit ElementViewIterator(const GenericArrayView array_view,
                                ::std::ptrdiff_t index)
-      : array_view_(array_view), view_((*array_view)[index]), index_(index) {}
+      : array_view_(array_view), view_(array_view[index]), index_(index) {}
 
   ElementViewIterator() = default;
 
@@ -62,7 +66,7 @@ class ElementViewIterator {
 
   ElementViewIterator &operator+=(difference_type d) {
     index_ += (kDirection == ElementViewIteratorDirection::kForward ? d : -d);
-    view_ = (*array_view_)[index_];
+    view_ = array_view_[index_];
     return *this;
   }
 
@@ -135,7 +139,7 @@ class ElementViewIterator {
   }
 
  private:
-  const GenericArrayView *array_view_;
+  const GenericArrayView array_view_;
   typename GenericArrayView::ViewType view_;
   ::std::ptrdiff_t index_;
 };
@@ -169,7 +173,7 @@ class GenericArrayView final {
                           ElementViewIteratorDirection::kReverse>;
 
   GenericArrayView() : buffer_() {}
-  explicit GenericArrayView(const ElementViewParameterTypes &... parameters,
+  explicit GenericArrayView(const ElementViewParameterTypes &...parameters,
                             BufferType buffer)
       : parameters_{parameters...}, buffer_{buffer} {}
 
@@ -179,12 +183,12 @@ class GenericArrayView final {
                                                     index);
   }
 
-  ForwardIterator begin() const { return ForwardIterator(this, 0); }
-  ForwardIterator end() const { return ForwardIterator(this, ElementCount()); }
+  ForwardIterator begin() const { return ForwardIterator(*this, 0); }
+  ForwardIterator end() const { return ForwardIterator(*this, ElementCount()); }
   ReverseIterator rbegin() const {
-    return ReverseIterator(this, ElementCount() - 1);
+    return ReverseIterator(*this, ElementCount() - 1);
   }
-  ReverseIterator rend() const { return ReverseIterator(this, -1); }
+  ReverseIterator rend() const { return ReverseIterator(*this, -1); }
 
   // In order to selectively enable SizeInBytes and SizeInBits, it is
   // necessary to make them into templates.  Further, it is necessary for
@@ -260,6 +264,10 @@ class GenericArrayView final {
   ToString() const {
     EMBOSS_CHECK(Ok());
     return BackingStorage().template ToString<String>();
+  }
+
+  bool operator==(const GenericArrayView &other) const {
+    return parameters_ == other.parameters_ && buffer_ == other.buffer_;
   }
 
  private:
@@ -342,30 +350,6 @@ void WriteShorthandArrayCommentToTextStream(
   static_cast<void>(array);
   static_cast<void>(stream);
   static_cast<void>(options);
-}
-
-// Prints out the elements of an 8-bit Int or UInt array as characters.
-template <class Array, class Stream>
-void WriteShorthandAsciiArrayCommentToTextStream(
-    const Array *array, Stream *stream, const TextOutputOptions &options) {
-  if (!options.multiline()) return;
-  if (!options.comments()) return;
-  if (array->ElementCount() == 0) return;
-  static constexpr int kCharsPerBlock = 64;
-  static constexpr char kStandInForNonPrintableChar = '.';
-  auto start_new_line = [&]() {
-    stream->Write("\n");
-    stream->Write(options.current_indent());
-    stream->Write("# ");
-  };
-  for (int i = 0, n = array->ElementCount(); i < n; ++i) {
-    const int c = (*array)[i].Read();
-    const bool c_is_printable = (c >= 32 && c <= 126);
-    const bool starting_new_block = ((i % kCharsPerBlock) == 0);
-    if (starting_new_block) start_new_line();
-    stream->Write(c_is_printable ? static_cast<char>(c)
-                                 : kStandInForNonPrintableChar);
-  }
 }
 
 // Overload for arrays of UInt.

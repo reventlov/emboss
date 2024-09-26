@@ -18,7 +18,6 @@
 
 import argparse
 import os
-import subprocess
 import sys
 
 
@@ -45,7 +44,17 @@ def _parse_args(argv):
   parser.add_argument("--output-path",
                       nargs=1,
                       default=".",
-                      help="Prefix to use for the generated output file.")
+                      help="""Prefix path to use for the generated output file.
+                              Defaults to '.'""")
+  parser.add_argument("--output-file",
+                      nargs=1,
+                      help="""File name to be used for the generated output
+                              file. Defaults to input_file suffixed by '.h'""")
+  parser.add_argument("--cc-enum-traits",
+                      action=argparse.BooleanOptionalAction,
+                      default=True,
+                      help="""Controls generation of EnumTraits by the C++
+                              backend""")
   parser.add_argument("input_file",
                       type=str,
                       nargs=1,
@@ -56,51 +65,38 @@ def _parse_args(argv):
 def main(argv):
   flags = _parse_args(argv)
   base_path = os.path.dirname(__file__) or "."
-  subprocess_environment = os.environ.copy()
+  sys.path.append(base_path)
 
-  if subprocess_environment.get("PYTHONPATH"):
-    subprocess_environment["PYTHONPATH"] = (
-      base_path + ":" + subprocess_environment.get("PYTHONPATH"))
-  else:
-    subprocess_environment["PYTHONPATH"] = base_path
-
-  front_end_args = [
-      sys.executable,
-      os.path.join(base_path, "compiler", "front_end", "emboss_front_end.py"),
-      "--output-ir-to-stdout",
-      "--color-output", flags.color_output,
-  ]
-
-  for import_dir in flags.import_dirs:
-    front_end_args.extend(["--import-dir", import_dir])
-
-  front_end_args.append(flags.input_file[0])
-  front_end_status = subprocess.run(front_end_args,
-                                    stdout=subprocess.PIPE,
-                                    env=subprocess_environment)
-
-  if front_end_status.returncode != 0:
-    return front_end_status.returncode
-
-  back_end_status = subprocess.run(
-    [
-      sys.executable,
-      os.path.join(base_path, "compiler", "back_end", "cpp",
-        "emboss_codegen_cpp.py"),
-    ],
-    input=front_end_status.stdout,
-    stdout=subprocess.PIPE,
-    env=subprocess_environment
+  from compiler.back_end.cpp import ( # pylint:disable=import-outside-toplevel
+    emboss_codegen_cpp, header_generator
+  )
+  from compiler.front_end import ( # pylint:disable=import-outside-toplevel
+    emboss_front_end
   )
 
-  if back_end_status.returncode != 0:
-    return back_end_status.returncode
+  ir, _, errors =  emboss_front_end.parse_and_log_errors(
+      flags.input_file[0], flags.import_dirs, flags.color_output)
 
-  output_file = os.path.join(flags.output_path[0], flags.input_file[0]) + ".h"
-  os.makedirs(os.path.dirname(output_file), exist_ok=True)
+  if errors:
+    return 1
 
-  with open(output_file, "wb") as output:
-    output.write(back_end_status.stdout)
+  config = header_generator.Config(include_enum_traits=flags.cc_enum_traits)
+  header, errors = emboss_codegen_cpp.generate_headers_and_log_errors(
+      ir, flags.color_output, config)
+
+  if errors:
+    return 1
+
+  if flags.output_file:
+    output_file = flags.output_file[0]
+  else:
+    output_file = flags.input_file[0] + ".h"
+
+  output_filepath = os.path.join(flags.output_path[0], output_file)
+  os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+
+  with open(output_filepath, "w") as output:
+    output.write(header)
   return 0
 
 

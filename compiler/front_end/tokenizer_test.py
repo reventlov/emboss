@@ -319,7 +319,7 @@ def _make_short_token_match_tests():
         r'"\\\\"': ["String", eol],
     }
     for c in (
-        "[ ] ( ) ? : = + - * . == != < <= > >= && || , $max $present "
+        "[ ] ( ) ? : = + - * . == != < <= > >= && || << >> , $max $present "
         "$upper_bound $lower_bound $size_in_bits $size_in_bytes "
         "$max_size_in_bits $max_size_in_bytes $min_size_in_bits "
         "$min_size_in_bytes "

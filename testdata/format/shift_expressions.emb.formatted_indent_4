@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
--- Arithmetic expressions should be formatted without spaces around operators.
+-- Shift expressions should be formatted with spaces around operators.
 
 
 struct Foo:
-  0+0     [+1]  UInt  a
-  0+(0)   [+1]  UInt  b
-  (1)*(1) [+1]  UInt  c
-  (1)-(1) [+1]  UInt  d
-  -1+2-1  [+1]  UInt  e
+    0>>0     [+1]  UInt  a
+    0<<(0)   [+1]  UInt  b
+    (1)>>(1) [+1]  UInt  c
+    (1)<<(1) [+1]  UInt  d
+    -1<<2>>2 [+1]  UInt  e

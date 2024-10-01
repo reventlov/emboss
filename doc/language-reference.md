@@ -1180,10 +1180,10 @@ binding):
 1.  `()` `$max()` `$present()` `$upper_bound()` `$lower_bound()`
 2.  unary `+` and `-` ([see note 1](#note-1-unary-plusminus-precedence))
 3.  `*`
-4.  `+` `-`
-5.  `<` `>` `==` `!=` `>=` `<=` ([see note 2](#note-2-chained-and-mixed-comparisons))
-6.  `&&` `||` ([see note 3](#note-3-logical-andor-precedence))
-7.  `?:` ([see note 4](#note-4-choice-operator-precedence))
+4.  `+` `-` `<<` `>>` ([see note 2](#note-2-additive-operators-and-shifts))
+5.  `<` `>` `==` `!=` `>=` `<=` ([see note 3](#note-3-chained-and-mixed-comparisons))
+6.  `&&` `||` ([see note 4](#note-4-logical-andor-precedence))
+7.  `?:` ([see note 5](#note-5-choice-operator-precedence))
 
 
 ###### Note 1 (Unary Plus/Minus Precedence)
@@ -1207,7 +1207,39 @@ These are not:
 ```
 
 
-###### Note 2 (Chained and Mixed Comparisons)
+###### Note 2 (Additive Operators and Shifts)
+
+The additive operators `+` and `-` may be mixed freely.  The bit shift
+operators `<<` and `>>` may be mixed freely.  However, additive and bit shift
+operators may not be mixed without parentheses.  These expressions are valid:
+
+```
+x+y
+x+y+z
+x+y-z
+x<<y
+x>>y
+x>>y>>2
+x<<2>>y
+x+(y>>2)
+x-(1<<y)
+x+2+z-(y>>x<<5)
+(x+2+z-y)>>x<<5
+y*5>>x
+y*5+x
+```
+
+These are not:
+
+```
+x+y>>z
+x>>y-z
+x+y<<z
+x<<y-z
+```
+
+
+###### Note 3 (Chained and Mixed Comparisons)
 
 The relational operators may be chained like so:
 
@@ -1240,7 +1272,7 @@ A chain may contain either `<`, `<=`, and/or `==`, or `>`, `>=`, and/or `==`.
 Greater-than comparisons may not be mixed with less-than comparisons.
 
 
-###### Note 3 (Logical And/Or Precedence)
+###### Note 4 (Logical And/Or Precedence)
 
 The boolean logical operators have the same precedence, but may not be mixed
 without parentheses.  The following are allowed:
@@ -1260,7 +1292,7 @@ x && y || z
 ```
 
 
-###### Note 4 (Choice Operator Precedence)
+###### Note 5 (Choice Operator Precedence)
 
 The choice operator `?:` may not be chained without parentheses.  These are OK:
 
@@ -1410,6 +1442,39 @@ The `*` operator requires two integer arguments, and returns an integer.
 ```
 
 The `+` and `-` operators require two integer arguments, and return an integer
+result.
+
+
+##### `<<` and `>>`
+
+`<<` and `>>` are the left and right binary shift operators, respectively.
+`x<<y` is exactly equivalent to x⋅2<sup>y</sup>.  `x>>y` is exactly equivalent
+to ⌊x/(2<sup>y</sup>)⌋.  This is equivalent to taking the 2's-complement binary
+representation of `x` and shifting it left or right by `y` places, filling any
+new positions with either 0 (for left shift) or copies of the sign bit (for
+right shift).  For right shift, low order bits of `x` are discarded.
+
+Note that `(-x)>>y` is not always equal to `-(x>>y)`.
+
+```
+0b1100 >> 2 == 12 >> 2 == 0b11 == 3
+0b1111 >> 2 == 15 >> 2 == 0b11 == 3
+0b1100 << 2 == 12 << 2 == 0b110000 == 48
+0b1111 << 2 == 15 << 2 == 0b111100 == 60
+-12 >> 2 == -3
+-15 >> 2 == -4
+-12 << 2 == -48
+-15 << 2 == -60
+```
+
+The Emboss compiler will not accept any shift expression where the right hand
+side could be negative or greater than 63, or where the result could overflow
+64 bits.
+
+Unlike some languages, bit shifts in Emboss have no undefined behavior at
+runtime, and do not take the modulus of their right hand argument.
+
+The `<<` and `>>` operators require two integer arguments, and return an integer
 result.
 
 

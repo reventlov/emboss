@@ -49,21 +49,23 @@ or-expression                          -> comparison-expression
                                           or-expression-right+
 or-expression-right                    -> or-operator comparison-expression
 or-operator                            -> "||"
-comparison-expression                  -> additive-expression
-                                        | additive-expression
+comparison-expression                  -> shift-or-additive-expression
+                                        | shift-or-additive-expression
                                           equality-expression-right+
-                                        | additive-expression
+                                        | shift-or-additive-expression
                                           greater-expression-right-list
-                                        | additive-expression inequality-operator
-                                          additive-expression
-                                        | additive-expression
+                                        | shift-or-additive-expression
+                                          inequality-operator
+                                          shift-or-additive-expression
+                                        | shift-or-additive-expression
                                           less-expression-right-list
 less-expression-right-list             -> equality-expression-right*
                                           less-expression-right
                                           equality-or-less-expression-right*
 equality-or-less-expression-right      -> equality-expression-right
                                         | less-expression-right
-less-expression-right                  -> less-operator additive-expression
+less-expression-right                  -> less-operator
+                                          shift-or-additive-expression
 less-operator                          -> "<"
                                         | "<="
 inequality-operator                    -> "!="
@@ -72,16 +74,16 @@ greater-expression-right-list          -> equality-expression-right*
                                           equality-or-greater-expression-right*
 equality-or-greater-expression-right   -> equality-expression-right
                                         | greater-expression-right
-greater-expression-right               -> greater-operator additive-expression
+greater-expression-right               -> greater-operator
+                                          shift-or-additive-expression
 greater-operator                       -> ">"
                                         | ">="
-equality-expression-right              -> equality-operator additive-expression
+equality-expression-right              -> equality-operator
+                                          shift-or-additive-expression
 equality-operator                      -> "=="
-additive-expression                    -> times-expression
-                                          additive-expression-right*
-additive-expression-right              -> additive-operator times-expression
-additive-operator                      -> "+"
-                                        | "-"
+shift-or-additive-expression           -> additive-expression
+                                        | shift-expression
+                                        | times-expression
 times-expression                       -> negation-expression
                                           times-expression-right*
 times-expression-right                 -> multiplicative-operator
@@ -128,6 +130,16 @@ builtin-word                           -> "$is_statically_sized"
                                         | "$next"
                                         | "$static_size_in_bits"
 boolean-constant                       -> BooleanConstant
+additive-operator                      -> "+"
+                                        | "-"
+shift-expression                       -> times-expression
+                                          shift-expression-right+
+shift-expression-right                 -> shift-operator times-expression
+shift-operator                         -> "<<"
+                                        | ">>"
+additive-expression                    -> times-expression
+                                          additive-expression-right+
+additive-expression-right              -> additive-operator times-expression
 and-expression                         -> comparison-expression
                                           and-expression-right+
 and-expression-right                   -> and-operator comparison-expression
@@ -238,6 +250,8 @@ abbreviation?                         -> <empty>
 additive-expression-right*            -> <empty>
                                        | additive-expression-right
                                          additive-expression-right*
+additive-expression-right+            -> additive-expression-right
+                                         additive-expression-right*
 and-expression-right*                 -> <empty>
                                        | and-expression-right
                                          and-expression-right*
@@ -294,6 +308,11 @@ or-expression-right+                  -> or-expression-right or-expression-right
 parameter-definition-list-tail*       -> <empty>
                                        | parameter-definition-list-tail
                                          parameter-definition-list-tail*
+shift-expression-right*               -> <empty>
+                                       | shift-expression-right
+                                         shift-expression-right*
+shift-expression-right+               -> shift-expression-right
+                                         shift-expression-right*
 times-expression-right*               -> <empty>
                                        | times-expression-right
                                          times-expression-right*
@@ -344,6 +363,8 @@ Pattern                                    | Symbol
 `\<\=`                                     | `"<="`
 `\>\=`                                     | `">="`
 `\,`                                       | `","`
+`\<\<`                                     | `"<<"`
+`\>\>`                                     | `">>"`
 `\$static_size_in_bits`                    | `"$static_size_in_bits"`
 `\$is_statically_sized`                    | `"$is_statically_sized"`
 `\$max`                                    | `"$max"`

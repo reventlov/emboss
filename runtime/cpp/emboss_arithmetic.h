@@ -241,6 +241,22 @@ struct MaximumOperation {
 #include "emboss_arithmetic_maximum_operation_generated.h"
 };
 
+struct LeftShiftOperation {
+  template <typename T>
+  static inline constexpr T Do(T l, T r) {
+    return TwosComplementCast<T>(
+        static_cast<typename ::std::make_unsigned<T>::type>(l)
+        << static_cast<typename ::std::make_unsigned<T>::type>(r));
+  }
+};
+
+struct RightShiftOperation {
+  template <typename T>
+  static inline constexpr T Do(T l, T r) {
+    return l >> r;
+  }
+};
+
 //// Special operations, where either un-Known() operands do not always result
 //// in un-Known() results, or where Known() operands do not always result in
 //// Known() results.
@@ -386,6 +402,20 @@ inline constexpr Maybe<ResultT> GreaterThanOrEqual(Maybe<LeftT> l,
 template <typename IntermediateT, typename ResultT, typename... ArgsT>
 inline constexpr Maybe<ResultT> Maximum(Maybe<ArgsT>... args) {
   return MaybeDo<IntermediateT, ResultT, MaximumOperation, ArgsT...>(args...);
+}
+
+template <typename IntermediateT, typename ResultT, typename LeftT,
+          typename RightT>
+inline constexpr Maybe<ResultT> LeftShift(Maybe<LeftT> l, Maybe<RightT> r) {
+  return MaybeDo<IntermediateT, ResultT, LeftShiftOperation, LeftT, RightT>(
+      l, r);
+}
+
+template <typename IntermediateT, typename ResultT, typename LeftT,
+          typename RightT>
+inline constexpr Maybe<ResultT> RightShift(Maybe<LeftT> l, Maybe<RightT> r) {
+  return MaybeDo<IntermediateT, ResultT, RightShiftOperation, LeftT, RightT>(
+      l, r);
 }
 
 }  // namespace support

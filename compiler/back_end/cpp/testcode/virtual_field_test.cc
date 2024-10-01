@@ -380,6 +380,29 @@ TEST(VirtualFields, SizeInBytes) {
   EXPECT_EQ(8, UsesExternalSize::MaxSizeInBytes());
 }
 
+TEST(Shifts, Shifts) {
+  ::std::array<unsigned char, 5> bytes = {0x04, 0x03, 0x02, 0xf1, 0x04};
+  const auto view = MakeUsesShiftsView(&bytes);
+  EXPECT_TRUE(view.Ok());
+  EXPECT_EQ(view.value().Read(), 0xf1020304U);
+  EXPECT_EQ(view.signed_value().Read(), -0xefdfcfc);
+  EXPECT_EQ(view.shift().Read(), 4);
+  EXPECT_EQ(view.left_shift().Read(), 0xf10203040ULL);
+  EXPECT_EQ(view.right_shift().Read(), 0xf102030ULL);
+  EXPECT_EQ(view.signed_left_shift().Read(), -0xefdfcfc0LL);
+
+  // -0x...fd0 instead of -0x...fcf because shift right 4 is equivalent to
+  // *flooring* division by 16, which rounds towards negative infinity, not
+  // towards 0.
+  //
+  // In binary, -0x...fcfc is 0b...0000 0011 0000 0100
+  //
+  // Shifted right 4, that's 0b...0000 0011 0000, which is -0x...fd0
+  //
+  // -0x...fcf would be 0b...0000 0011 0001
+  EXPECT_EQ(view.signed_right_shift().Read(), -0xefdfd0LL);
+}
+
 TEST(WriteTransform, Write) {
   ::std::array<char, 1> values = {0};
   const auto view = MakeImplicitWriteBackView(&values);

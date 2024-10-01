@@ -164,6 +164,7 @@ def _make_golden_file_tests():
         "one_type",
         "parameterized_struct",
         "sanity_check",
+        "shift_expressions",
         "spacing_between_types",
         "trailing_spaces",
         "virtual_fields",

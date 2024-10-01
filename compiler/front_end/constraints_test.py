@@ -1230,6 +1230,127 @@ class ConstraintsTest(unittest.TestCase):
             error.filter_errors(constraints.check_constraints(ir)),
         )
 
+    def test_right_shift_expression_with_potentially_large_shift_amount(self):
+        ir = _make_ir_from_emb(
+            '[$default byte_order: "LittleEndian"]\n'
+            "struct Foo:\n"
+            "  0  [+1]   UInt  x\n"
+            "  if 0xffff_ffff_ffff_ffff >> x > 0:\n"
+            "    8 [+1]   UInt  y\n"
+        )
+        condition = ir.module[0].type[0].structure.field[1].existence_condition
+        error_location = condition.function.args[0].function.args[1].source_location
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        error_location,
+                        "Shift amount must not be larger than 63 bits: shift "
+                        "operand could be 255.",
+                    )
+                ]
+            ],
+            error.filter_errors(constraints.check_constraints(ir)),
+        )
+
+    def test_left_shift_expression_with_potentially_large_shift_amount(self):
+        ir = _make_ir_from_emb(
+            '[$default byte_order: "LittleEndian"]\n'
+            "struct Foo:\n"
+            "  0  [+1]   UInt  x\n"
+            "  if 0xffff_ffff_ffff_ffff << x > 0:\n"
+            "    8 [+1]   UInt  y\n"
+        )
+        condition = ir.module[0].type[0].structure.field[1].existence_condition
+        error_location = condition.function.args[0].function.args[1].source_location
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        error_location,
+                        "Shift amount must not be larger than 63 bits: shift "
+                        "operand could be 255.",
+                    )
+                ]
+            ],
+            error.filter_errors(constraints.check_constraints(ir)),
+        )
+
+    def test_right_shift_expression_with_potentially_negative_shift_amount(self):
+        ir = _make_ir_from_emb(
+            '[$default byte_order: "LittleEndian"]\n'
+            "struct Foo:\n"
+            "  0  [+1]   Int  x\n"
+            "  if 0xffff_ffff_ffff_ffff >> x > 0:\n"
+            "    8 [+1]   UInt  y\n"
+        )
+        condition = ir.module[0].type[0].structure.field[1].existence_condition
+        error_location = condition.function.args[0].function.args[1].source_location
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        error_location,
+                        "Shift amount must not be negative: shift operand "
+                        "could be -128.",
+                    )
+                ]
+            ],
+            error.filter_errors(constraints.check_constraints(ir)),
+        )
+
+    def test_left_shift_expression_with_potentially_large_shift_amount(self):
+        ir = _make_ir_from_emb(
+            '[$default byte_order: "LittleEndian"]\n'
+            "struct Foo:\n"
+            "  0  [+1]   Int  x\n"
+            "  if 0xffff_ffff_ffff_ffff << x > 0:\n"
+            "    8 [+1]   UInt  y\n"
+        )
+        condition = ir.module[0].type[0].structure.field[1].existence_condition
+        error_location = condition.function.args[0].function.args[1].source_location
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        error_location,
+                        "Shift amount must not be negative: shift operand "
+                        "could be -128.",
+                    )
+                ]
+            ],
+            error.filter_errors(constraints.check_constraints(ir)),
+        )
+
+    def test_left_shift_expression_with_potential_overflow(self):
+        ir = _make_ir_from_emb(
+            '[$default byte_order: "LittleEndian"]\n'
+            "struct Foo:\n"
+            "  0  [+1]   UInt  x\n"
+            "  if x << 57 > 0:\n"
+            "    8 [+1]   UInt  y\n"
+        )
+        condition = ir.module[0].type[0].structure.field[1].existence_condition
+        error_location = condition.function.args[0].source_location
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        error_location,
+                        "Potential range of expression is 0 to {}, which "
+                        "cannot fit in a 64-bit signed or unsigned "
+                        "integer.".format(255 << 57),
+                    )
+                ]
+            ],
+            error.filter_errors(constraints.check_constraints(ir)),
+        )
+
     def test_checks_constancy_of_constant_references(self):
         ir = _make_ir_from_emb(
             "struct Foo:\n" "  0 [+1]  UInt  x\n" "  let y = x\n" "  let z = Foo.y\n"

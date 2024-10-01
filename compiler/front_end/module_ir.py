@@ -213,6 +213,8 @@ def _text_to_operator(text):
         ">=": ir_data.FunctionMapping.GREATER_OR_EQUAL,
         "<": ir_data.FunctionMapping.LESS,
         "<=": ir_data.FunctionMapping.LESS_OR_EQUAL,
+        "<<": ir_data.FunctionMapping.LEFT_SHIFT,
+        ">>": ir_data.FunctionMapping.RIGHT_SHIFT,
     }
     return operations[text]
 
@@ -446,6 +448,9 @@ def _string_constant(string):
 @_handles("logical-expression -> and-expression")
 @_handles("logical-expression -> or-expression")
 @_handles("logical-expression -> comparison-expression")
+@_handles("shift-or-additive-expression -> shift-expression")
+@_handles("shift-or-additive-expression -> additive-expression")
+@_handles("shift-or-additive-expression -> times-expression")
 @_handles("choice-expression -> logical-expression")
 @_handles("expression -> choice-expression")
 def _expression(expression):
@@ -480,14 +485,14 @@ def _choice_expression(condition, question, if_true, colon, if_false):
     )
 
 
-@_handles("comparison-expression -> additive-expression")
+@_handles("comparison-expression -> shift-or-additive-expression")
 def _no_op_comparative_expression(expression):
     return expression
 
 
 @_handles(
     "comparison-expression ->"
-    "    additive-expression inequality-operator additive-expression"
+    "    shift-or-additive-expression inequality-operator shift-or-additive-expression"
 )
 def _comparative_expression(left, operator, right):
     location = parser_types.make_location(
@@ -503,7 +508,8 @@ def _comparative_expression(left, operator, right):
     )
 
 
-@_handles("additive-expression -> times-expression additive-expression-right*")
+@_handles("additive-expression -> times-expression additive-expression-right+")
+@_handles("shift-expression -> times-expression shift-expression-right+")
 @_handles("times-expression -> negation-expression times-expression-right*")
 @_handles("and-expression -> comparison-expression and-expression-right+")
 @_handles("or-expression -> comparison-expression or-expression-right+")
@@ -554,13 +560,16 @@ def _binary_operator_expression(expression, expression_right):
 
 
 @_handles(
-    "comparison-expression ->" "    additive-expression equality-expression-right+"
+    "comparison-expression ->"
+    "    shift-or-additive-expression equality-expression-right+"
 )
 @_handles(
-    "comparison-expression ->" "    additive-expression less-expression-right-list"
+    "comparison-expression ->"
+    "    shift-or-additive-expression less-expression-right-list"
 )
 @_handles(
-    "comparison-expression ->" "    additive-expression greater-expression-right-list"
+    "comparison-expression ->"
+    "    shift-or-additive-expression greater-expression-right-list"
 )
 def _chained_comparison_expression(expression, expression_right):
     """Builds the IR for a chain of comparisons, like a == b == c.
@@ -705,9 +714,10 @@ def _equality_or_less_or_greater(right):
 @_handles("and-expression-right -> and-operator comparison-expression")
 @_handles("or-expression-right -> or-operator comparison-expression")
 @_handles("additive-expression-right -> additive-operator times-expression")
-@_handles("equality-expression-right -> equality-operator additive-expression")
-@_handles("greater-expression-right -> greater-operator additive-expression")
-@_handles("less-expression-right -> less-operator additive-expression")
+@_handles("shift-expression-right -> shift-operator times-expression")
+@_handles("equality-expression-right -> equality-operator shift-or-additive-expression")
+@_handles("greater-expression-right -> greater-operator shift-or-additive-expression")
+@_handles("less-expression-right -> less-operator shift-or-additive-expression")
 @_handles("times-expression-right ->" "    multiplicative-operator negation-expression")
 def _expression_right_production(operator, expression):
     return _ExpressionTail(operator, expression)
@@ -1444,6 +1454,8 @@ def _name(word):
 @_handles('inequality-operator -> "!="')
 @_handles('additive-operator -> "+"')
 @_handles('additive-operator -> "-"')
+@_handles('shift-operator -> "<<"')
+@_handles('shift-operator -> ">>"')
 @_handles('multiplicative-operator -> "*"')
 @_handles('function-name -> "$max"')
 @_handles('function-name -> "$present"')

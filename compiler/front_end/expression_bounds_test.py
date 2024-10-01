@@ -329,6 +329,46 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual("5", start.function.args[1].type.integer.modular_value)
         self.assertEqual("infinity", start.type.integer.modulus)
 
+    def test_constant_left_shift(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  7<<2 [+1]  UInt  x\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        start = ir.module[0].type[0].structure.field[0].location.start
+        self.assertEqual("28", start.type.integer.minimum_value)
+        self.assertEqual("28", start.type.integer.maximum_value)
+        self.assertEqual("28", start.type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual("7", start.function.args[0].type.integer.minimum_value)
+        self.assertEqual("7", start.function.args[0].type.integer.maximum_value)
+        self.assertEqual("7", start.function.args[0].type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual("2", start.function.args[1].type.integer.minimum_value)
+        self.assertEqual("2", start.function.args[1].type.integer.maximum_value)
+        self.assertEqual("2", start.function.args[1].type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+
+    def test_constant_right_shift(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  7>>2 [+1]  UInt  x\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        start = ir.module[0].type[0].structure.field[0].location.start
+        self.assertEqual("1", start.type.integer.minimum_value)
+        self.assertEqual("1", start.type.integer.maximum_value)
+        self.assertEqual("1", start.type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual("7", start.function.args[0].type.integer.minimum_value)
+        self.assertEqual("7", start.function.args[0].type.integer.maximum_value)
+        self.assertEqual("7", start.function.args[0].type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual("2", start.function.args[1].type.integer.minimum_value)
+        self.assertEqual("2", start.function.args[1].type.integer.maximum_value)
+        self.assertEqual("2", start.function.args[1].type.integer.modular_value)
+        self.assertEqual("infinity", start.type.integer.modulus)
+
     def test_nested_constant_expression(self):
         ir = self._make_ir(
             "struct Foo:\n" "  if 7*(3+1) == 28:\n" "    0 [+1]  UInt  x\n"
@@ -383,6 +423,167 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual("1", y_start.type.integer.modular_value)
         self.assertEqual("-1015", y_start.type.integer.minimum_value)
         self.assertEqual("5", y_start.type.integer.maximum_value)
+
+    def test_constant_with_power_of_2_factor_left_shift_non_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0     [+1]  bits:\n"
+            "    0     [+3]  UInt  x\n"
+            "  12<<x [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("12", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("12", y_start.type.integer.minimum_value)
+        self.assertEqual("1536", y_start.type.integer.maximum_value)
+
+    def test_constant_without_power_of_2_factor_left_shift_non_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0     [+1]  bits:\n"
+            "    0     [+3]  UInt  x\n"
+            "  13<<x [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("13", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("13", y_start.type.integer.minimum_value)
+        self.assertEqual("1664", y_start.type.integer.maximum_value)
+
+    def test_constant_with_power_of_2_factor_left_shift_non_constant_greater_than_2(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+1]  bits:\n"
+            "    0         [+3]  UInt  x\n"
+            "  12<<(x+2) [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("48", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("48", y_start.type.integer.minimum_value)
+        self.assertEqual("6144", y_start.type.integer.maximum_value)
+
+    def test_constant_without_power_of_2_factor_left_shift_non_constant_greater_than_2(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+1]  bits:\n"
+            "    0         [+3]  UInt  x\n"
+            "  13<<(x+2) [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("52", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("52", y_start.type.integer.minimum_value)
+        self.assertEqual("6656", y_start.type.integer.maximum_value)
+
+    def test_constant_with_large_power_of_2_factor_right_shift_non_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0     [+1]  bits:\n"
+            "    0     [+3]  UInt  x\n"
+            "  1536>>x [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("4", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("12", y_start.type.integer.minimum_value)
+        self.assertEqual("1536", y_start.type.integer.maximum_value)
+
+    def test_constant_with_small_power_of_2_factor_right_shift_non_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0     [+1]  bits:\n"
+            "    0     [+3]  UInt  x\n"
+            "  12>>x [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("12", y_start.type.integer.maximum_value)
+
+    def test_constant_with_no_power_of_2_factor_right_shift_non_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0     [+1]  bits:\n"
+            "    0     [+3]  UInt  x\n"
+            "  13>>x [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("13", y_start.type.integer.maximum_value)
+
+    def test_large_variable_with_narrow_range_right_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0           [+1]  bits:\n"
+            "    0           [+3]  UInt  x\n"
+            "  (1536+x)>>3 [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("infinity", y_start.type.integer.modulus)
+        self.assertEqual("192", y_start.type.integer.modular_value)
+        self.assertEqual("192", y_start.type.integer.minimum_value)
+        self.assertEqual("192", y_start.type.integer.maximum_value)
+
+    def test_small_variable_right_shift_large_variable(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0        [+1]  bits:\n"
+            "    0        [+3]  UInt  x\n"
+            "  z>>(x+8) [+1]  UInt  y\n"
+            "  1        [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("infinity", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("0", y_start.type.integer.maximum_value)
+
+    def test_small_negative_variable_right_shift_large_variable(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0              [+1]  bits:\n"
+            "    0              [+3]  UInt  x\n"
+            "  (z-256)>>(x+9) [+1]  UInt  y\n"
+            "  1              [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("infinity", y_start.type.integer.modulus)
+        self.assertEqual("-1", y_start.type.integer.modular_value)
+        self.assertEqual("-1", y_start.type.integer.minimum_value)
+        self.assertEqual("-1", y_start.type.integer.maximum_value)
+
+    def test_small_variable_with_indeterminate_sign_right_shift_large_variable(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0              [+1]  bits:\n"
+            "    0              [+3]  UInt  x\n"
+            "  (z-128)>>(x+8) [+1]  UInt  y\n"
+            "  1              [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("-1", y_start.type.integer.minimum_value)
+        self.assertEqual("0", y_start.type.integer.maximum_value)
 
     def test_non_constant_minus_constant(self):
         ir = self._make_ir(
@@ -517,6 +718,182 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual(
             str((12 * 255 + 9) * (40 * 255 + 15)), z_start.type.integer.maximum_value
         )
+
+    def test_nonconstant_left_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+1]  bits:\n"
+            "    0         [+3]  UInt  x\n"
+            "  (x+1)<<4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("16", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("16", y_start.type.integer.minimum_value)
+        self.assertEqual("128", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_modular_value_left_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0           [+1]  bits:\n"
+            "    0           [+3]  UInt  x\n"
+            "  (x*5+1)<<4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("80", y_start.type.integer.modulus)
+        self.assertEqual("16", y_start.type.integer.modular_value)
+        self.assertEqual("16", y_start.type.integer.minimum_value)
+        self.assertEqual("576", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_power_of_2_modular_value_left_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0           [+1]  bits:\n"
+            "    0           [+3]  UInt  x\n"
+            "  (x*10+4)<<4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("160", y_start.type.integer.modulus)
+        self.assertEqual("64", y_start.type.integer.modular_value)
+        self.assertEqual("64", y_start.type.integer.minimum_value)
+        self.assertEqual("1184", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_power_of_2_modular_value_and_higher_power_of_2_modulus_left_shift_constant(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0           [+1]  bits:\n"
+            "    0           [+3]  UInt  x\n"
+            "  (x*20+2)<<4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("320", y_start.type.integer.modulus)
+        self.assertEqual("32", y_start.type.integer.modular_value)
+        self.assertEqual("32", y_start.type.integer.minimum_value)
+        self.assertEqual("2272", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_right_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+2]  UInt  x\n"
+            "  (x+1)>>4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[1].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("4096", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_power_of_2_factor_right_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+2]  UInt  x\n"
+            "  (x*2)>>4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[1].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("8191", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_large_power_of_2_factor_right_shift_constant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0           [+2]  UInt  x\n"
+            "  (x*128)>>4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[1].location.start
+        self.assertEqual("8", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("524280", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_large_power_of_2_factor_modulus_right_shift_constant(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0                [+2]  UInt  x\n"
+            "  (x*128 + 33)>>4  [+1]  UInt  y\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[1].location.start
+        self.assertEqual("8", y_start.type.integer.modulus)
+        self.assertEqual("2", y_start.type.integer.modular_value)
+        self.assertEqual("2", y_start.type.integer.minimum_value)
+        self.assertEqual("524282", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_left_shift_nonconstant(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+1]  bits:\n"
+            "    0         [+3]  UInt  x\n"
+            "  z<<x      [+1]  UInt  y\n"
+            "  1         [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("1", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("32640", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_left_shift_nonconstant_greater_than_0(self):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0         [+1]  bits:\n"
+            "    0         [+3]  UInt  x\n"
+            "  z<<(x+1)  [+1]  UInt  y\n"
+            "  1         [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("2", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("65280", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_power_of_2_factor_modulus_left_shift_nonconstant_greater_than_0(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0              [+1]  bits:\n"
+            "    0            [+3]  UInt  x\n"
+            "  (z*12)<<(x+1)  [+1]  UInt  y\n"
+            "  1              [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("24", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("0", y_start.type.integer.minimum_value)
+        self.assertEqual("783360", y_start.type.integer.maximum_value)
+
+    def test_nonconstant_with_power_of_2_factor_modulus_and_smaller_power_of_2_modular_value_left_shift_nonconstant_greater_than_0(
+        self,
+    ):
+        ir = self._make_ir(
+            "struct Foo:\n"  #
+            "  0                 [+1]  bits:\n"
+            "    0               [+3]  UInt  x\n"
+            "  (z*12 + 2)<<(x+1) [+1]  UInt  y\n"
+            "  1                 [+1]  UInt  z\n"
+        )
+        self.assertEqual([], expression_bounds.compute_constants(ir))
+        y_start = ir.module[0].type[0].structure.field[2].location.start
+        self.assertEqual("4", y_start.type.integer.modulus)
+        self.assertEqual("0", y_start.type.integer.modular_value)
+        self.assertEqual("4", y_start.type.integer.minimum_value)
+        self.assertEqual("783872", y_start.type.integer.maximum_value)
 
     def test_signed_non_constant_times_signed_non_constant_full_complexity(self):
         ir = self._make_ir(

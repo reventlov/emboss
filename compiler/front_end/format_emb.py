@@ -792,6 +792,7 @@ def _empty_list():
 
 @_formats("abbreviation? -> ")
 @_formats("additive-expression-right* -> ")
+@_formats("shift-expression-right* -> ")
 @_formats("and-expression-right* -> ")
 @_formats("argument-list -> ")
 @_formats("array-length-specifier* -> ")
@@ -819,6 +820,8 @@ def _empty_string():
 @_formats("abbreviation? -> abbreviation")
 @_formats('additive-operator -> "-"')
 @_formats('additive-operator -> "+"')
+@_formats('shift-operator -> "<<"')
+@_formats('shift-operator -> ">>"')
 @_formats('and-operator -> "&&"')
 @_formats("attribute-context? -> attribute-context")
 @_formats("attribute-value -> expression")
@@ -841,7 +844,7 @@ def _empty_string():
 @_formats('builtin-word -> "$static_size_in_bits"')
 @_formats("choice-expression -> logical-expression")
 @_formats("Comment? -> Comment")
-@_formats("comparison-expression -> additive-expression")
+@_formats("comparison-expression -> shift-or-additive-expression")
 @_formats("constant-name -> constant-word")
 @_formats("constant-reference -> constant-reference-tail")
 @_formats("constant-reference-tail -> constant-word")
@@ -867,6 +870,9 @@ def _empty_string():
 @_formats('inequality-operator -> "!="')
 @_formats('less-operator -> "<="')
 @_formats('less-operator -> "<"')
+@_formats("shift-or-additive-expression -> shift-expression")
+@_formats("shift-or-additive-expression -> additive-expression")
+@_formats("shift-or-additive-expression -> times-expression")
 @_formats("logical-expression -> and-expression")
 @_formats("logical-expression -> comparison-expression")
 @_formats("logical-expression -> or-expression")
@@ -923,11 +929,17 @@ def _identity(x):
 @_formats("field-reference -> snake-reference field-reference-tail*")
 @_formats('abbreviation -> "(" snake-word ")"')
 @_formats("additive-expression-right -> additive-operator times-expression")
+@_formats("shift-expression-right -> shift-operator times-expression")
 @_formats(
     "additive-expression-right* -> additive-expression-right"
     "                              additive-expression-right*"
 )
-@_formats("additive-expression -> times-expression additive-expression-right*")
+@_formats(
+    "shift-expression-right* -> shift-expression-right"
+    "                           shift-expression-right*"
+)
+@_formats("additive-expression -> times-expression additive-expression-right+")
+@_formats("shift-expression -> times-expression shift-expression-right+")
 @_formats('array-length-specifier -> "[" "]"')
 @_formats('delimited-argument-list -> "(" argument-list ")"')
 @_formats(
@@ -962,6 +974,10 @@ def _identity(x):
     "comma-then-expression* -> comma-then-expression"
     "                          comma-then-expression*"
 )
+@_formats(
+    "additive-expression-right+ -> additive-expression-right additive-expression-right*"
+)
+@_formats("shift-expression-right+ -> shift-expression-right shift-expression-right*")
 @_formats("or-expression-right* -> or-expression-right or-expression-right*")
 @_formats(
     "less-expression-right-list -> equality-expression-right*"
@@ -971,11 +987,11 @@ def _identity(x):
 @_formats("or-expression-right+ -> or-expression-right or-expression-right*")
 @_formats("and-expression -> comparison-expression and-expression-right+")
 @_formats(
-    "comparison-expression -> additive-expression"
+    "comparison-expression -> shift-or-additive-expression"
     "                         greater-expression-right-list"
 )
 @_formats(
-    "comparison-expression -> additive-expression"
+    "comparison-expression -> shift-or-additive-expression"
     "                         equality-expression-right+"
 )
 @_formats("or-expression -> comparison-expression or-expression-right+")
@@ -1005,7 +1021,7 @@ def _identity(x):
     "    equality-or-greater-expression-right*"
 )
 @_formats(
-    "comparison-expression -> additive-expression"
+    "comparison-expression -> shift-or-additive-expression"
     "                         less-expression-right-list"
 )
 def _concatenate(*elements):
@@ -1013,9 +1029,9 @@ def _concatenate(*elements):
     return "".join(elements)
 
 
-@_formats("equality-expression-right -> equality-operator additive-expression")
-@_formats("less-expression-right -> less-operator additive-expression")
-@_formats("greater-expression-right -> greater-operator additive-expression")
+@_formats("equality-expression-right -> equality-operator shift-or-additive-expression")
+@_formats("less-expression-right -> less-operator shift-or-additive-expression")
+@_formats("greater-expression-right -> greater-operator shift-or-additive-expression")
 @_formats("or-expression-right -> or-operator comparison-expression")
 @_formats("and-expression-right -> and-operator comparison-expression")
 def _concatenate_with_prefix_spaces(*elements):
@@ -1026,8 +1042,8 @@ def _concatenate_with_prefix_spaces(*elements):
 @_formats("attribute* -> attribute attribute*")
 @_formats('comma-then-expression -> "," expression')
 @_formats(
-    "comparison-expression -> additive-expression inequality-operator"
-    "                         additive-expression"
+    "comparison-expression -> shift-or-additive-expression inequality-operator"
+    "                         shift-or-additive-expression"
 )
 @_formats(
     'choice-expression -> logical-expression "?" logical-expression'

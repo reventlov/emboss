@@ -245,6 +245,10 @@ class FunctionMapping(int, enum.Enum):
     """`$upper_bound()`"""
     LOWER_BOUND = 16
     """`$lower_bound()`"""
+    LEFT_SHIFT = 17
+    """`<<`"""
+    RIGHT_SHIFT = 18
+    """`>>`"""
 
 
 @dataclasses.dataclass

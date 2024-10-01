@@ -577,6 +577,19 @@ def _integer_bounds_errors_for_expression(expression, source_file_name):
             # Don't cascade bounds errors: report them at the lowest level they
             # appear.
             return errors
+    if expression.WhichOneof(
+        "expression"
+    ) == "function" and expression.function.function in (
+        ir_data.FunctionMapping.LEFT_SHIFT,
+        ir_data.FunctionMapping.RIGHT_SHIFT,
+    ):
+        errors = _shift_bounds_errors(
+            expression.function.args[1].type.integer,
+            source_file_name,
+            expression.function.args[1].source_location,
+        )
+        if errors:
+            return errors
     if expression.type.WhichOneof("type") == "integer":
         errors = _integer_bounds_errors(
             expression.type.integer,
@@ -667,6 +680,36 @@ def _integer_bounds_errors(bounds, name, source_file_name, error_source_location
                     )
                 ]
             ]
+    return []
+
+
+def _shift_bounds_errors(bounds, source_file_name, error_source_location):
+    """Returns appropriate errors, if any, for the given integer bounds."""
+    # The C++ runtime assumes that it will never have to deal with negative or
+    # large values.  If you wish to relax either of these constraints, you will
+    # need to update the runtime to correctly handle the wider range.
+    if bounds.minimum_value == "-infinity" or int(bounds.minimum_value) < 0:
+        return [
+            [
+                error.error(
+                    source_file_name,
+                    error_source_location,
+                    "Shift amount must not be negative: shift operand could be "
+                    f"{bounds.minimum_value}.",
+                )
+            ]
+        ]
+    if bounds.maximum_value == "infinity" or int(bounds.maximum_value) > 63:
+        return [
+            [
+                error.error(
+                    source_file_name,
+                    error_source_location,
+                    "Shift amount must not be larger than 63 bits: shift "
+                    f"operand could be {bounds.maximum_value}.",
+                )
+            ]
+        ]
     return []
 
 

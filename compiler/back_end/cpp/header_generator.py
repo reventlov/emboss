@@ -587,6 +587,8 @@ def _builtin_function_name(function):
         ir_data.FunctionMapping.GREATER_OR_EQUAL: "GreaterThanOrEqual",
         ir_data.FunctionMapping.CHOICE: "Choice",
         ir_data.FunctionMapping.MAXIMUM: "Maximum",
+        ir_data.FunctionMapping.LEFT_SHIFT: "LeftShift",
+        ir_data.FunctionMapping.RIGHT_SHIFT: "RightShift",
     }
     return functions[function]
 

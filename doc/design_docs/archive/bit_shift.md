@@ -1,5 +1,14 @@
 # Design Sketch: Left and Right Bit Shift Operators
 
+This feature has been implemented, and this document is provided primarily for
+historical interest.
+
+The final version of this feature is largely unchanged, except that the
+expression bounds computations have been replaced with simpler, tighter bounds
+derived from the bounds of multiplication and division: `x << y` is equivalent
+to `x * (1 << y)` and `x >> y` is equivalent to `⌊x / (1 << y)⌋`.
+
+
 ## Overview
 
 This is a proposal to add left and right shift to the Emboss expression
@@ -254,7 +263,7 @@ For a shift `x >> y`, there are several cases to consider:
     evenly divisible by 2<sup>y</sup>: in this case, the bounds of the result
     are equal to the corresponding bounds on `x` divided by 2<sup>y</sup>.
     Note that this is a special case of computing the bounds for
-    [division](./division_and_modulus.md#division).
+    [division](../division_and_modulus.md#division).
 3.  Otherwise:
     *   `minimum_value` is either `minimum value of x >> maximum value of y` or
         `minimum value of x >> minimum value of y`, depending on signs

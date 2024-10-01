@@ -196,6 +196,46 @@ class TypeAnnotationTest(unittest.TestCase):
             error.filter_errors(type_check.annotate_types(ir)),
         )
 
+    def test_error_on_bad_left_shift_operand_types(self):
+        ir = self._make_ir(
+            "struct Foo:\n"
+            "  0 [+1]       UInt      x\n"
+            "  1 [+1<<true]  UInt:8[]  y\n"
+        )
+        expression = ir.module[0].type[0].structure.field[1].location.size
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        expression.function.args[1].source_location,
+                        "Right argument of operator '<<' must be an integer.",
+                    )
+                ]
+            ],
+            error.filter_errors(type_check.annotate_types(ir)),
+        )
+
+    def test_error_on_bad_right_shift_operand_types(self):
+        ir = self._make_ir(
+            "struct Foo:\n"
+            "  0 [+1]       UInt      x\n"
+            "  1 [+1>>true]  UInt:8[]  y\n"
+        )
+        expression = ir.module[0].type[0].structure.field[1].location.size
+        self.assertEqual(
+            [
+                [
+                    error.error(
+                        "m.emb",
+                        expression.function.args[1].source_location,
+                        "Right argument of operator '>>' must be an integer.",
+                    )
+                ]
+            ],
+            error.filter_errors(type_check.annotate_types(ir)),
+        )
+
     def test_error_on_bad_times_operand_types(self):
         ir = self._make_ir(
             "struct Foo:\n"

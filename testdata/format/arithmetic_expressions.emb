@@ -19,4 +19,4 @@ struct Foo:
   0+(0) [+1]  UInt  b
   (1)*(1) [+1]  UInt  c
   (1)-(1) [+1]  UInt  d
-  -1+2 [+1]  UInt  e
+  -1+2-1 [+1]  UInt  e

@@ -26,6 +26,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "runtime/cpp/emboss_bit_util.h"
 #include "runtime/cpp/emboss_cpp_util.h"
 
 // Forward declarations for optional text processing helpers.
@@ -490,50 +491,9 @@ class IntView final {
     static_assert(sizeof(ValueType) <= sizeof(typename BitViewType::ValueType),
                   "Integer types wider than BitViewType::ValueType are not "
                   "supported.");
-#if EMBOSS_SYSTEM_IS_TWOS_COMPLEMENT
-    // static_cast from unsigned to signed is implementation-defined when the
-    // value does not fit in the signed type (in this case, when the final value
-    // should be negative).  Most implementations use a reasonable definition,
-    // so on most systems we can just cast.
-    //
-    // If the integer does not take up the full width of ValueType, it needs to
-    // be sign-extended until it does.  The easiest way to do this is to shift
-    // until the sign bit is in the topmost position, then cast to signed, then
-    // shift back.  The shift back will copy the sign bit.
-    return static_cast<ValueType>(
+    return support::TwosComplementCast<ValueType>(
                data << (sizeof(ValueType) * 8 - Parameters::kBits)) >>
            (sizeof(ValueType) * 8 - Parameters::kBits);
-#else
-    // Otherwise, in order to convert without running into
-    // implementation-defined behavior, first mask out the sign bit.  This
-    // results in (final result MOD 2 ** (width of int in bits - 1)).  That
-    // value can be safely converted to the signed ValueType.
-    //
-    // Finally, if the sign bit was set, subtract (2 ** (width of int in bits -
-    // 2)) twice.
-    //
-    // The 1-bit signed integer case must be handled separately, but it is
-    // (fortunately) quite easy to enumerate both possible values.
-    if (Parameters::kBits == 1) {
-      if (data == 0) {
-        return 0;
-      } else if (data == 1) {
-        return -1;
-      } else {
-        EMBOSS_CHECK(false);
-        return -1;  // Return value if EMBOSS_CHECK is disabled.
-      }
-    } else {
-      typename BitViewType::ValueType sign_bit =
-          static_cast<typename BitViewType::ValueType>(1)
-          << (Parameters::kBits - 1);
-      typename BitViewType::ValueType mask = sign_bit - 1;
-      typename BitViewType::ValueType data_mod2_to_n = mask & data;
-      ValueType result_sign_bit =
-          static_cast<ValueType>((data & sign_bit) >> 1);
-      return data_mod2_to_n - result_sign_bit - result_sign_bit;
-    }
-#endif
   }
 
   BitViewType buffer_;

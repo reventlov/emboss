@@ -104,6 +104,10 @@ def _compute_constraints_of_function(expression, ir):
         ir_data.FunctionMapping.OR,
     ):
         _compute_constant_value_of_comparison_operator(expression)
+    elif op == ir_data.FunctionMapping.LEFT_SHIFT:
+        _compute_constraints_of_left_shift_operator(expression)
+    elif op == ir_data.FunctionMapping.RIGHT_SHIFT:
+        _compute_constraints_of_right_shift_operator(expression)
     elif op == ir_data.FunctionMapping.CHOICE:
         _compute_constraints_of_choice_operator(expression)
     elif op == ir_data.FunctionMapping.MAXIMUM:
@@ -306,6 +310,71 @@ def _mul(a, b):
     return int(a) * int(b)
 
 
+def _mod(a, b):
+    """Returns a mod b, where a is an int, and b is an int or "infinity"."""
+    assert not _is_infinite(a), f"Cannot take modulus of {a}."
+    a = int(a)
+    assert b != "-infinity", f"Cannot take {a} mod {b}."
+    if b == "infinity":
+        # This is weird if a is negative, but follows the conventions of
+        # IntegerType.
+        return a
+    b = int(b)
+    return a % b
+
+
+def _clipped_lshift(a, b):
+    """Shifts a left by b places, where a and b are ints, "infinity", or "-infinity"."""
+    if _is_infinite(a):
+        return a
+    a = int(a)
+    # Negative shifts are disallowed, but this is not checked until
+    # check_constraints().  Until then, just clip to 0 so that bounds can be
+    # computed.
+    #
+    # Likewise, left shifts that would cause overflow are disallowed, but this
+    # is also not checked until check_constraints().  With left shift, it is
+    # very easy to blow up Python's memory by, e.g., left shifting by something
+    # like 0x100_0000_0000.  Since shifts by such large amounts are unlikely to
+    # be intentional, just saturate the shift amount to "infinity" if it is
+    # that large.
+    #
+    # Note: until `[requires]` is properly propagated into the bounds
+    # computations, this could pick up cases like:
+    #
+    #    struct Bar:
+    #      0 [+4]  UInt  mantissa
+    #      4 [+2]  UInt  exponent
+    #        [requires: this <= 32]
+    #      let value = mantissa << exponent  # exponent's upper bound is 65535!
+    b = _max([0, _min([1024, b])])
+    if b == 1024:
+        if a > 0:
+            return "infinity"
+        elif a == 0:
+            return 0
+        else:
+            return "-infinity"
+    b = int(b)
+    return a << b
+
+
+def _clipped_rshift(a, b):
+    """Shifts a right by b places, where a and b are ints, "infinity", or "-infinity"."""
+    b = _max([0, b])
+    if _is_infinite(a):
+        # Should really be NaN if b is +infinity.
+        return a
+    a = int(a)
+    if b == "infinity":
+        if a >= 0:
+            return 0
+        else:
+            return -1
+    b = int(b)
+    return a >> b
+
+
 def _is_infinite(a):
     return a in ("infinity", "-infinity")
 
@@ -326,6 +395,53 @@ def _min(a):
     if all(n == "infinity" for n in a):
         return "infinity"
     return min(int(n) for n in a if not _is_infinite(n))
+
+
+def _gcd_2_to_the_n(a, n):
+    """Returns the largest power of 2 that evenly divides a."""
+    if a in ("infinity", "-infinity"):
+        return 1
+    if int(a) == 0:
+        return 1
+    # x - 1 is equal to x with its lowest-order 1 bit and all trailing 0 bits
+    # inverted.  Thus, x ^ (x - 1) will cancel out all bits above the lowest-
+    # order 1 bit in x, and leave all the bits below that set.  Adding 1 sets
+    # all the 1 bits to 0, and sets the lowest-order 0 bit to 1, which is 1 bit
+    # place higher than the original lowest-order 1 bit, so a 1-bit shift brings
+    # it to the correct position.  This works with positive and negative
+    # numbers, but not 0.
+    #
+    # This is derived from "Determining if an integer is a power of 2" at
+    # https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+    #
+    # An alternate solution would count the number of trailing 0 bits using
+    # an algorithm such as:
+    # https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightLinear
+    #
+    # Positive example:
+    #
+    # x                        = 20 = 0b00010100
+    # x - 1                    = 19 = 0b00010011
+    # x ^ (x - 1)              =  7 = 0b00000111
+    # (x ^ (x - 1)) + 1        =  8 = 0b00001000
+    # ((x ^ (x - 1)) + 1) >> 1 =  4 = 0b00000100
+    #
+    # 20 % 4 = 0; 20 / 4 = 5
+    #
+    # Negative example:
+    #
+    # x                        = -20 = 0b11...11101100
+    # x - 1                    = -21 = 0b11...11101011
+    # x ^ (x - 1)              =   7 = 0b00...00000111
+    # (x ^ (x - 1)) + 1        =   8 = 0b00...00001000
+    # ((x ^ (x - 1)) + 1) >> 1 =   4 = 0b00...00000100
+    #
+    # -20 % 4 = 0; -20 / 4 = -5
+    max_power_of_2 = ((int(a) ^ (int(a) - 1)) + 1) >> 1
+    if n == "infinity":
+        return max_power_of_2
+    else:
+        return max(max_power_of_2, 2 ** int(n))
 
 
 def _compute_constraints_of_additive_operator(expression):
@@ -503,8 +619,12 @@ def _assert_integer_constraints(expression):
     """
     bounds = expression.type.integer
     if bounds.modulus == "infinity":
-        assert bounds.minimum_value == bounds.modular_value
-        assert bounds.maximum_value == bounds.modular_value
+        assert (
+            bounds.minimum_value == bounds.modular_value
+        ), f"{bounds.minimum_value} != {bounds.modular_value}"
+        assert (
+            bounds.maximum_value == bounds.modular_value
+        ), f"{bounds.minimum_value} != {bounds.modular_value}"
         return
     modulus = int(bounds.modulus)
     assert modulus > 0
@@ -713,6 +833,235 @@ def _compute_constraints_of_choice_operator(expression):
             "boolean",
             "enumeration",
         ), "Unknown type {} for expression".format(if_true.type.WhichOneof("type"))
+
+
+def _compute_constraints_of_left_shift_operator(expression):
+    """Computes the constraints of a left shift (`<<`) expression."""
+    args = expression.function.args
+    for arg in args:
+        assert arg.type.integer.modular_value, str(expression)
+    left, right = args
+    minimum_value = _min(
+        [
+            _clipped_lshift(
+                left.type.integer.minimum_value, right.type.integer.minimum_value
+            ),
+            _clipped_lshift(
+                left.type.integer.minimum_value, right.type.integer.maximum_value
+            ),
+        ]
+    )
+    maximum_value = _max(
+        [
+            _clipped_lshift(
+                left.type.integer.maximum_value, right.type.integer.minimum_value
+            ),
+            _clipped_lshift(
+                left.type.integer.maximum_value, right.type.integer.maximum_value
+            ),
+        ]
+    )
+    expression.type.integer.minimum_value = str(minimum_value)
+    expression.type.integer.maximum_value = str(maximum_value)
+    if minimum_value == maximum_value:
+        expression.type.integer.modulus = "infinity"
+        expression.type.integer.modular_value = str(minimum_value)
+        return
+    if right.type.integer.modulus == "infinity":
+        if left.type.integer.modulus == "infinity":
+            # constant << constant
+            #
+            # A constant shifted by a constant is still a constant.
+            expression.type.integer.modular_value = str(minimum_value)
+            expression.type.integer.modulus = "infinity"
+        else:
+            # variable << constant
+            #
+            # This is exactly like variable * (1 << constant), and these are,
+            # essentially, the same formulas as the corresponding case in
+            # _compute_constraints_of_multiplicative_operator().
+            expression.type.integer.modular_value = str(
+                _clipped_lshift(
+                    left.type.integer.modular_value, right.type.integer.minimum_value
+                )
+            )
+            expression.type.integer.modulus = str(
+                _clipped_lshift(
+                    left.type.integer.modulus, right.type.integer.minimum_value
+                )
+            )
+    else:
+        expression.type.integer.modular_value = "0"
+        if left.type.integer.modulus == "infinity":
+            # constant << variable
+            #
+            # This is also a special case of constant * variable, although it
+            # is a bit subtler than variable << constant.  This is equivalent
+            # to `constant * (1 << variable)`; `(1 << variable)` is always ≡
+            # `0` mod `(1 << minimum_value(variable))`.
+            expression.type.integer.modulus = str(
+                _clipped_lshift(
+                    left.type.integer.modular_value,
+                    right.type.integer.minimum_value,
+                )
+            )
+        else:
+            # variable << variable
+            #
+            # This case is essentially lvariable * rvariable, where rvariable
+            # is a multiple of (1 << right.type.integer.minimum_value).  Since
+            # the right side modular_value is 0, a number of factors in the
+            # equation for the modulus of multiplication cancel out, and we are
+            # left with just GCD(left.modulus, left.modular_value) * (1 <<
+            # right.minimum_value).  That can be trivially rearranged to the
+            # equation below.
+            expression.type.integer.modulus = str(
+                _clipped_lshift(
+                    _greatest_common_divisor(
+                        left.type.integer.modulus,
+                        left.type.integer.modular_value,
+                    ),
+                    right.type.integer.minimum_value,
+                )
+            )
+
+
+def _compute_constraints_of_right_shift_operator(expression):
+    """Computes the constraints of a right shift (`>>`) expression."""
+    args = expression.function.args
+    for arg in args:
+        assert arg.type.integer.modular_value, str(expression)
+    left, right = args
+    minimum_value = _min(
+        [
+            _clipped_rshift(
+                left.type.integer.minimum_value, right.type.integer.minimum_value
+            ),
+            _clipped_rshift(
+                left.type.integer.minimum_value, right.type.integer.maximum_value
+            ),
+        ]
+    )
+    maximum_value = _max(
+        [
+            _clipped_rshift(
+                left.type.integer.maximum_value, right.type.integer.minimum_value
+            ),
+            _clipped_rshift(
+                left.type.integer.maximum_value, right.type.integer.maximum_value
+            ),
+        ]
+    )
+    expression.type.integer.minimum_value = str(minimum_value)
+    expression.type.integer.maximum_value = str(maximum_value)
+    if minimum_value == maximum_value:
+        # This can happen if all of the varying bits in the left operand are
+        # shifted out.  E.g., {0..15} >> {3} is always 0, and {128..135} >> {3}
+        # is always 16.
+        #
+        # It can also happen with variable shifts, if the shift is large enough
+        # that the end result is always 0 or -1: {0..15} >> {3..32} is always 0,
+        # and {-1..-16} >> {3..32} is always -1.
+        #
+        # There may be other possibilities.  This is a quick check.
+        expression.type.integer.modulus = "infinity"
+        expression.type.integer.modular_value = str(minimum_value)
+        return
+    if right.type.integer.modulus == "infinity":
+        if left.type.integer.modulus == "infinity":
+            # constant >> constant
+            expression.type.integer.modular_value = str(minimum_value)
+            expression.type.integer.modulus = "infinity"
+        else:
+            # variable >> constant
+            if (
+                _mod(
+                    left.type.integer.modulus,
+                    1 << int(right.type.integer.modular_value),
+                )
+                == 0
+            ):
+                # variable >> constant, where the variable has a constant value
+                # mod 2**constant.
+                expression.type.integer.modular_value = str(
+                    _clipped_rshift(
+                        left.type.integer.modular_value,
+                        right.type.integer.modular_value,
+                    )
+                )
+                expression.type.integer.modulus = str(
+                    _clipped_rshift(
+                        left.type.integer.modulus, right.type.integer.modular_value
+                    )
+                )
+                assert (
+                    expression.type.integer.modulus == "infinity"
+                    or int(expression.type.integer.modulus) > 0
+                ), f"{expression}"
+            else:
+                expression.type.integer.modular_value = "0"
+                expression.type.integer.modulus = "1"
+    else:
+        if left.type.integer.modulus == "infinity":
+            # constant >> variable
+            expression.type.integer.modular_value = "0"
+            expression.type.integer.modulus = str(
+                _max(
+                    [
+                        _clipped_rshift(
+                            _gcd_2_to_the_n(
+                                _clipped_rshift(
+                                    left.type.integer.modular_value,
+                                    right.type.integer.minimum_value,
+                                ),
+                                "infinity",
+                            ),
+                            _sub(
+                                right.type.integer.maximum_value,
+                                right.type.integer.minimum_value,
+                            ),
+                        ),
+                        1,
+                    ]
+                )
+            )
+            assert (
+                expression.type.integer.modulus == "infinity"
+                or int(expression.type.integer.modulus) > 0
+            ), f"{expression}"
+        else:
+            # variable >> variable
+            expression.type.integer.modular_value = "0"
+            expression.type.integer.modulus = str(
+                _max(
+                    [
+                        _clipped_rshift(
+                            _gcd_2_to_the_n(
+                                _greatest_common_divisor(
+                                    _clipped_rshift(
+                                        left.type.integer.modular_value,
+                                        right.type.integer.minimum_value,
+                                    ),
+                                    _clipped_rshift(
+                                        left.type.integer.modulus,
+                                        right.type.integer.minimum_value,
+                                    ),
+                                ),
+                                "infinity",
+                            ),
+                            _sub(
+                                right.type.integer.maximum_value,
+                                right.type.integer.minimum_value,
+                            ),
+                        ),
+                        1,
+                    ]
+                )
+            )
+            assert (
+                expression.type.integer.modulus == "infinity"
+                or int(expression.type.integer.modulus) > 0
+            ), f"{expression}"
 
 
 def _greatest_common_divisor(a, b):

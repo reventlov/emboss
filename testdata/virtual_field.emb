@@ -144,6 +144,17 @@ struct UsesExternalSize:
   x.$size_in_bytes [+StructureWithConstants.$size_in_bytes]  StructureWithConstants  y
 
 
+struct UsesShifts:
+  0 [+4]  UInt  value
+  0 [+4]  Int  signed_value
+  4 [+1]  bits:
+    0 [+3]  UInt  shift
+  let left_shift = value << shift
+  let right_shift = value >> shift
+  let signed_left_shift = signed_value << shift
+  let signed_right_shift = signed_value >> shift
+
+
 struct ImplicitWriteBack:
   0 [+1]  UInt  x
   let x_plus_ten = x + 10

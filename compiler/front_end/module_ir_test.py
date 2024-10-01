@@ -295,6 +295,7 @@ struct Foo:
   16+17*18 [+19*20-21]   UInt  precedence
   -(+1) [+0-(-10)]       UInt  unary_plus_minus
   1 + + 2 [+3 - -4 - 5]  UInt  unary_plus_minus_2
+  1 << 2 [+5 >> 1 << 2]  UInt  shifts
 ---
 {
   "type": [
@@ -611,6 +612,37 @@ struct Foo:
                       }
                     },
                     { "constant": { "value": "5" } }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "name": { "name": { "text": "shifts" } },
+            "location": {
+              "start": {
+                "function": {
+                  "function": "LEFT_SHIFT",
+                  "args": [
+                    { "constant": { "value": "1" } },
+                    { "constant": { "value": "2" } }
+                  ]
+                }
+              },
+              "size": {
+                "function": {
+                  "function": "LEFT_SHIFT",
+                  "args": [
+                    {
+                      "function": {
+                        "function": "RIGHT_SHIFT",
+                        "args": [
+                          { "constant": { "value": "5" } },
+                          { "constant": { "value": "1" } }
+                        ]
+                      }
+                    },
+                    { "constant": { "value": "2" } }
                   ]
                 }
               }

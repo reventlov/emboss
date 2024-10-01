@@ -221,6 +221,22 @@ def _type_check_monomorphic_operator(expression, source_file_name, errors):
             1,
             "function",
         ),
+        ir_data.FunctionMapping.LEFT_SHIFT: (
+            int_result,
+            int_args,
+            binary,
+            2,
+            2,
+            "operator",
+        ),
+        ir_data.FunctionMapping.RIGHT_SHIFT: (
+            int_result,
+            int_args,
+            binary,
+            2,
+            2,
+            "operator",
+        ),
     }
     function = expression.function.function
     (set_result_type, check_arg, arg_names, min_args, max_args, kind) = functions[

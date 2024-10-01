@@ -153,6 +153,38 @@ def _invert_expression(expression, ir):
     # Note that any equation that can be solved here becomes part of Emboss's
     # contract, forever, so be conservative in expanding its solving capabilities!
     for index in reference_path:
+        # It seems logical to add support for shift expressions, but there are
+        # a couple of design points that need to be worked out first:
+        #
+        # The right shift operation is destructive.  Assuming an .emb like:
+        #
+        #     struct Foo:
+        #         0 [+2]  x
+        #         let lshift_x = x << 3
+        #         let rshift_x = x >> 3
+        #
+        # something like:
+        #
+        #     view.rshift_x().Write(view.rshift_x().Read());
+        #
+        # can change the value of `x`, which could be surprising.  There are a
+        # couple of ways that could be handled, from just "ignore the fact that
+        # it stomps some bits" to "update in such a way that the
+        # non-contributing information is preserved," but it needs design
+        # review.  (Note that "non-contributing information" may not align to
+        # bit boundaries if the expression is something like `let r = (x + 1)
+        # >> 3`.)
+        #
+        # Left shift is less problematic, but could still lead to surprising
+        # results, like:
+        #
+        #     view.lshift_x().Write(0x7);
+        #     assert(view.x().Read() == 0, "bits were masked during write");
+        #
+        # As with right shift, there are multiple ways that this could be
+        # handled, including silently changing the bits or doing a runtime
+        # CHECK() that the value being written would be read back as the same
+        # value, similar to the existing range checks in Write().
         if subexpression.function.function == ir_data.FunctionMapping.ADDITION:
             result = ir_data.Expression(
                 function=ir_data.Function(

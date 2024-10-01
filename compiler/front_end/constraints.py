@@ -214,11 +214,11 @@ def _check_type_requirements_for_field(
 
     if field.type.HasField("atomic_type"):
         field_min_size = (
-            int(field.location.size.type.integer.minimum_value)
+            field.location.size.type.integer.minimum_value
             * type_definition.addressable_unit
         )
         field_max_size = (
-            int(field.location.size.type.integer.maximum_value)
+            field.location.size.type.integer.maximum_value
             * type_definition.addressable_unit
         )
         field_is_atomic = True
@@ -592,8 +592,8 @@ def _integer_bounds_errors_for_expression(expression, source_file_name):
         uint64_only_clauses = []
         for clause in [expression] + list(expression.function.args):
             if clause.type.WhichOneof("type") == "integer":
-                arg_minimum = int(clause.type.integer.minimum_value)
-                arg_maximum = int(clause.type.integer.maximum_value)
+                arg_minimum = clause.type.integer.minimum_value
+                arg_maximum = clause.type.integer.maximum_value
                 if not _bounds_can_fit_64_bit_signed(arg_minimum, arg_maximum):
                     uint64_only_clauses.append(clause)
                 elif not _bounds_can_fit_64_bit_unsigned(arg_minimum, arg_maximum):
@@ -626,9 +626,9 @@ def _integer_bounds_errors_for_expression(expression, source_file_name):
 
 def _integer_bounds_errors(bounds, name, source_file_name, error_source_location):
     """Returns appropriate errors, if any, for the given integer bounds."""
-    assert bounds.minimum_value, "{}".format(bounds)
-    assert bounds.maximum_value, "{}".format(bounds)
-    if bounds.minimum_value == "-infinity" or bounds.maximum_value == "infinity":
+    assert bounds.minimum_value is not None, "{}".format(bounds)
+    assert bounds.maximum_value is not None, "{}".format(bounds)
+    if bounds.minimum_value.is_infinite() or bounds.maximum_value.is_infinite():
         return [
             [
                 error.error(
@@ -640,9 +640,9 @@ def _integer_bounds_errors(bounds, name, source_file_name, error_source_location
             ]
         ]
     if not _bounds_can_fit_any_64_bit_integer_type(
-        int(bounds.minimum_value), int(bounds.maximum_value)
+        bounds.minimum_value, bounds.maximum_value
     ):
-        if int(bounds.minimum_value) == int(bounds.maximum_value):
+        if bounds.minimum_value == bounds.maximum_value:
             return [
                 [
                     error.error(
@@ -673,8 +673,8 @@ def _check_bounds_on_runtime_integer_expressions(
     expression, source_file_name, in_attribute, errors
 ):
     if in_attribute and in_attribute.name.text == attributes.STATIC_REQUIREMENTS:
-        # [static_requirements] is never evaluated at runtime, and $size_in_bits is
-        # unbounded, so it should not be checked.
+        # [static_requirements] is never evaluated at runtime, and
+        # $size_in_bits is unbounded, so it should not be checked.
         return
     # The logic for gathering errors and suppressing cascades is simpler if
     # errors are just returned, rather than appended to a shared list.

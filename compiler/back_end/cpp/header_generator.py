@@ -29,6 +29,7 @@ from compiler.util import attribute_util
 from compiler.util import error
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
+from compiler.util import ir_num
 from compiler.util import ir_util
 from compiler.util import name_conversion
 from compiler.util import resources
@@ -822,7 +823,7 @@ def _render_expression(expression, ir, field_reader=None, subexpressions=None):
     # in the same type: expressions like `-0x8000_0000_0000_0000` and
     # `0x1_0000_0000_0000_0000 - 1` can appear.
     if expression.type.WhichOneof("type") == "integer":
-        if expression.type.integer.modulus == "infinity":
+        if expression.type.integer.modulus == ir_num.INFINITY:
             return _ExpressionResult(
                 _render_integer_for_expression(
                     int(expression.type.integer.modular_value)
@@ -879,7 +880,7 @@ def _render_existence_test(field, ir, subexpressions=None):
 
 def _alignment_of_location(location):
     constraints = location.start.type.integer
-    if constraints.modulus == "infinity":
+    if constraints.modulus == ir_num.INFINITY:
         # The C++ templates use 0 as a sentinel value meaning infinity for
         # alignment.
         return 0, constraints.modular_value

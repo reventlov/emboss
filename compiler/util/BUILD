@@ -28,7 +28,7 @@ py_library(
         "ir_data_fields.py",
         "ir_data_utils.py",
     ],
-    deps = [],
+    deps = [":ir_num"],
 )
 
 py_test(
@@ -40,7 +40,10 @@ py_test(
 py_test(
     name = "ir_data_utils_test",
     srcs = ["ir_data_utils_test.py"],
-    deps = [":expression_parser", ":ir_data"],
+    deps = [
+        ":expression_parser",
+        ":ir_data",
+    ],
 )
 
 py_library(
@@ -54,9 +57,26 @@ py_library(
 )
 
 py_library(
+    name = "ir_num",
+    srcs = [
+        "ir_num.py",
+    ],
+    deps = [],
+)
+
+py_test(
+    name = "ir_num_test",
+    srcs = ["ir_num_test.py"],
+    deps = [":ir_num"],
+)
+
+py_library(
     name = "ir_util",
     srcs = ["ir_util.py"],
-    deps = [":ir_data"],
+    deps = [
+        ":ir_data",
+        ":ir_num",
+    ],
 )
 
 py_test(
@@ -66,6 +86,7 @@ py_test(
     deps = [
         ":expression_parser",
         ":ir_data",
+        ":ir_num",
         ":ir_util",
     ],
 )

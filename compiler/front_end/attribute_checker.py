@@ -23,6 +23,7 @@ import re
 from compiler.front_end import attributes
 from compiler.front_end import type_check
 from compiler.util import attribute_util
+from compiler.util import ir_num
 from compiler.util import error
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
@@ -116,14 +117,15 @@ def _construct_integer_attribute(name, value, source_location):
     attr_value = ir_data.AttributeValue(
         expression=ir_data.Expression(
             constant=ir_data.NumericConstant(
-                value=str(value), source_location=source_location
+                value=ir_num.Num(value),
+                source_location=source_location,
             ),
             type=ir_data.ExpressionType(
                 integer=ir_data.IntegerType(
-                    modular_value=str(value),
-                    modulus="infinity",
-                    minimum_value=str(value),
-                    maximum_value=str(value),
+                    modular_value=ir_num.Num(value),
+                    modulus=ir_num.INFINITY,
+                    minimum_value=ir_num.Num(value),
+                    maximum_value=ir_num.Num(value),
                 )
             ),
             source_location=source_location,

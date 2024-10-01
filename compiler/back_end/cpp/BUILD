@@ -54,6 +54,7 @@ py_library(
         "//compiler/back_end/util:code_template",
         "//compiler/util:attribute_util",
         "//compiler/util:ir_data",
+        "//compiler/util:ir_num",
         "//compiler/util:ir_util",
         "//compiler/util:name_conversion",
         "//compiler/util:resources",

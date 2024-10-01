@@ -17,6 +17,7 @@
 import unittest
 from compiler.front_end import expression_bounds
 from compiler.front_end import glue
+from compiler.util import ir_num
 from compiler.util import test_util
 
 
@@ -35,10 +36,10 @@ class ComputeConstantsTest(unittest.TestCase):
         ir = self._make_ir("struct Foo:\n" "  10 [+1]  UInt  x\n")
         self.assertEqual([], expression_bounds.compute_constants(ir))
         start = ir.module[0].type[0].structure.field[0].location.start
-        self.assertEqual("10", start.type.integer.minimum_value)
-        self.assertEqual("10", start.type.integer.maximum_value)
-        self.assertEqual("10", start.type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual(10, start.type.integer.minimum_value)
+        self.assertEqual(10, start.type.integer.maximum_value)
+        self.assertEqual(10, start.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
 
     def test_boolean_constant(self):
         ir = self._make_ir("struct Foo:\n" "  if true:\n" "    0 [+1]  UInt  x\n")
@@ -234,16 +235,16 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         condition = ir.module[0].type[0].structure.field[0].existence_condition
         left = condition.function.args[0]
-        self.assertEqual("12", left.type.enumeration.value)
+        self.assertEqual(12, left.type.enumeration.value)
 
     def test_non_constant_field_reference(self):
         ir = self._make_ir("struct Foo:\n" "  y [+1]  UInt  x\n" "  0 [+1]  UInt  y\n")
         self.assertEqual([], expression_bounds.compute_constants(ir))
         start = ir.module[0].type[0].structure.field[0].location.start
-        self.assertEqual("0", start.type.integer.minimum_value)
-        self.assertEqual("255", start.type.integer.maximum_value)
-        self.assertEqual("0", start.type.integer.modular_value)
-        self.assertEqual("1", start.type.integer.modulus)
+        self.assertEqual(0, start.type.integer.minimum_value)
+        self.assertEqual(255, start.type.integer.maximum_value)
+        self.assertEqual(0, start.type.integer.modular_value)
+        self.assertEqual(1, start.type.integer.modulus)
 
     def test_field_reference_bounds_are_uncomputable(self):
         # Variable-sized UInt/Int/Bcd should not cause an error here: they are
@@ -282,52 +283,52 @@ class ComputeConstantsTest(unittest.TestCase):
         ir = self._make_ir("struct Foo:\n" "  7+5 [+1]  UInt  x\n")
         self.assertEqual([], expression_bounds.compute_constants(ir))
         start = ir.module[0].type[0].structure.field[0].location.start
-        self.assertEqual("12", start.type.integer.minimum_value)
-        self.assertEqual("12", start.type.integer.maximum_value)
-        self.assertEqual("12", start.type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("7", start.function.args[0].type.integer.minimum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.maximum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("5", start.function.args[1].type.integer.minimum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.maximum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual(12, start.type.integer.minimum_value)
+        self.assertEqual(12, start.type.integer.maximum_value)
+        self.assertEqual(12, start.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(7, start.function.args[0].type.integer.minimum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.maximum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(5, start.function.args[1].type.integer.minimum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.maximum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
 
     def test_constant_subtraction(self):
         ir = self._make_ir("struct Foo:\n" "  7-5 [+1]  UInt  x\n")
         self.assertEqual([], expression_bounds.compute_constants(ir))
         start = ir.module[0].type[0].structure.field[0].location.start
-        self.assertEqual("2", start.type.integer.minimum_value)
-        self.assertEqual("2", start.type.integer.maximum_value)
-        self.assertEqual("2", start.type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("7", start.function.args[0].type.integer.minimum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.maximum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("5", start.function.args[1].type.integer.minimum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.maximum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual(2, start.type.integer.minimum_value)
+        self.assertEqual(2, start.type.integer.maximum_value)
+        self.assertEqual(2, start.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(7, start.function.args[0].type.integer.minimum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.maximum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(5, start.function.args[1].type.integer.minimum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.maximum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
 
     def test_constant_multiplication(self):
         ir = self._make_ir("struct Foo:\n" "  7*5 [+1]  UInt  x\n")
         self.assertEqual([], expression_bounds.compute_constants(ir))
         start = ir.module[0].type[0].structure.field[0].location.start
-        self.assertEqual("35", start.type.integer.minimum_value)
-        self.assertEqual("35", start.type.integer.maximum_value)
-        self.assertEqual("35", start.type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("7", start.function.args[0].type.integer.minimum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.maximum_value)
-        self.assertEqual("7", start.function.args[0].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
-        self.assertEqual("5", start.function.args[1].type.integer.minimum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.maximum_value)
-        self.assertEqual("5", start.function.args[1].type.integer.modular_value)
-        self.assertEqual("infinity", start.type.integer.modulus)
+        self.assertEqual(35, start.type.integer.minimum_value)
+        self.assertEqual(35, start.type.integer.maximum_value)
+        self.assertEqual(35, start.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(7, start.function.args[0].type.integer.minimum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.maximum_value)
+        self.assertEqual(7, start.function.args[0].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
+        self.assertEqual(5, start.function.args[1].type.integer.minimum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.maximum_value)
+        self.assertEqual(5, start.function.args[1].type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, start.type.integer.modulus)
 
     def test_nested_constant_expression(self):
         ir = self._make_ir(
@@ -337,30 +338,34 @@ class ComputeConstantsTest(unittest.TestCase):
         condition = ir.module[0].type[0].structure.field[0].existence_condition
         self.assertTrue(condition.type.boolean.value)
         condition_left = condition.function.args[0]
-        self.assertEqual("28", condition_left.type.integer.minimum_value)
-        self.assertEqual("28", condition_left.type.integer.maximum_value)
-        self.assertEqual("28", condition_left.type.integer.modular_value)
-        self.assertEqual("infinity", condition_left.type.integer.modulus)
+        self.assertEqual(28, condition_left.type.integer.minimum_value)
+        self.assertEqual(28, condition_left.type.integer.maximum_value)
+        self.assertEqual(28, condition_left.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, condition_left.type.integer.modulus)
         condition_left_left = condition_left.function.args[0]
-        self.assertEqual("7", condition_left_left.type.integer.minimum_value)
-        self.assertEqual("7", condition_left_left.type.integer.maximum_value)
-        self.assertEqual("7", condition_left_left.type.integer.modular_value)
-        self.assertEqual("infinity", condition_left_left.type.integer.modulus)
+        self.assertEqual(7, condition_left_left.type.integer.minimum_value)
+        self.assertEqual(7, condition_left_left.type.integer.maximum_value)
+        self.assertEqual(7, condition_left_left.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, condition_left_left.type.integer.modulus)
         condition_left_right = condition_left.function.args[1]
-        self.assertEqual("4", condition_left_right.type.integer.minimum_value)
-        self.assertEqual("4", condition_left_right.type.integer.maximum_value)
-        self.assertEqual("4", condition_left_right.type.integer.modular_value)
-        self.assertEqual("infinity", condition_left_right.type.integer.modulus)
+        self.assertEqual(4, condition_left_right.type.integer.minimum_value)
+        self.assertEqual(4, condition_left_right.type.integer.maximum_value)
+        self.assertEqual(4, condition_left_right.type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, condition_left_right.type.integer.modulus)
         condition_left_right_left = condition_left_right.function.args[0]
-        self.assertEqual("3", condition_left_right_left.type.integer.minimum_value)
-        self.assertEqual("3", condition_left_right_left.type.integer.maximum_value)
-        self.assertEqual("3", condition_left_right_left.type.integer.modular_value)
-        self.assertEqual("infinity", condition_left_right_left.type.integer.modulus)
+        self.assertEqual(3, condition_left_right_left.type.integer.minimum_value)
+        self.assertEqual(3, condition_left_right_left.type.integer.maximum_value)
+        self.assertEqual(3, condition_left_right_left.type.integer.modular_value)
+        self.assertEqual(
+            ir_num.INFINITY, condition_left_right_left.type.integer.modulus
+        )
         condition_left_right_right = condition_left_right.function.args[1]
-        self.assertEqual("1", condition_left_right_right.type.integer.minimum_value)
-        self.assertEqual("1", condition_left_right_right.type.integer.maximum_value)
-        self.assertEqual("1", condition_left_right_right.type.integer.modular_value)
-        self.assertEqual("infinity", condition_left_right_right.type.integer.modulus)
+        self.assertEqual(1, condition_left_right_right.type.integer.minimum_value)
+        self.assertEqual(1, condition_left_right_right.type.integer.maximum_value)
+        self.assertEqual(1, condition_left_right_right.type.integer.modular_value)
+        self.assertEqual(
+            ir_num.INFINITY, condition_left_right_right.type.integer.modulus
+        )
 
     def test_constant_plus_non_constant(self):
         ir = self._make_ir(
@@ -368,10 +373,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual("4", y_start.type.integer.modulus)
-        self.assertEqual("1", y_start.type.integer.modular_value)
-        self.assertEqual("5", y_start.type.integer.minimum_value)
-        self.assertEqual("1025", y_start.type.integer.maximum_value)
+        self.assertEqual(4, y_start.type.integer.modulus)
+        self.assertEqual(1, y_start.type.integer.modular_value)
+        self.assertEqual(5, y_start.type.integer.minimum_value)
+        self.assertEqual(1025, y_start.type.integer.maximum_value)
 
     def test_constant_minus_non_constant(self):
         ir = self._make_ir(
@@ -379,10 +384,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual("4", y_start.type.integer.modulus)
-        self.assertEqual("1", y_start.type.integer.modular_value)
-        self.assertEqual("-1015", y_start.type.integer.minimum_value)
-        self.assertEqual("5", y_start.type.integer.maximum_value)
+        self.assertEqual(4, y_start.type.integer.modulus)
+        self.assertEqual(1, y_start.type.integer.modular_value)
+        self.assertEqual(-1015, y_start.type.integer.minimum_value)
+        self.assertEqual(5, y_start.type.integer.maximum_value)
 
     def test_non_constant_minus_constant(self):
         ir = self._make_ir(
@@ -390,10 +395,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual(str((4 * 0) - 5), y_start.type.integer.minimum_value)
-        self.assertEqual(str((4 * 255) - 5), y_start.type.integer.maximum_value)
-        self.assertEqual("4", y_start.type.integer.modulus)
-        self.assertEqual("3", y_start.type.integer.modular_value)
+        self.assertEqual((4 * 0) - 5, y_start.type.integer.minimum_value)
+        self.assertEqual((4 * 255) - 5, y_start.type.integer.maximum_value)
+        self.assertEqual(4, y_start.type.integer.modulus)
+        self.assertEqual(3, y_start.type.integer.modular_value)
 
     def test_non_constant_plus_non_constant(self):
         ir = self._make_ir(
@@ -404,10 +409,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("3", z_start.type.integer.minimum_value)
-        self.assertEqual(str(4 * 255 + 6 * 255 + 3), z_start.type.integer.maximum_value)
-        self.assertEqual("2", z_start.type.integer.modulus)
-        self.assertEqual("1", z_start.type.integer.modular_value)
+        self.assertEqual(3, z_start.type.integer.minimum_value)
+        self.assertEqual(4 * 255 + 6 * 255 + 3, z_start.type.integer.maximum_value)
+        self.assertEqual(2, z_start.type.integer.modulus)
+        self.assertEqual(1, z_start.type.integer.modular_value)
 
     def test_non_constant_minus_non_constant(self):
         ir = self._make_ir(
@@ -418,10 +423,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("3", z_start.type.integer.modulus)
-        self.assertEqual("0", z_start.type.integer.modular_value)
-        self.assertEqual(str(-3 * 255), z_start.type.integer.minimum_value)
-        self.assertEqual(str(3 * 255), z_start.type.integer.maximum_value)
+        self.assertEqual(3, z_start.type.integer.modulus)
+        self.assertEqual(0, z_start.type.integer.modular_value)
+        self.assertEqual(-3 * 255, z_start.type.integer.minimum_value)
+        self.assertEqual(3 * 255, z_start.type.integer.maximum_value)
 
     def test_non_constant_times_constant(self):
         ir = self._make_ir(
@@ -429,10 +434,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual("20", y_start.type.integer.modulus)
-        self.assertEqual("5", y_start.type.integer.modular_value)
-        self.assertEqual("5", y_start.type.integer.minimum_value)
-        self.assertEqual(str((4 * 255 + 1) * 5), y_start.type.integer.maximum_value)
+        self.assertEqual(20, y_start.type.integer.modulus)
+        self.assertEqual(5, y_start.type.integer.modular_value)
+        self.assertEqual(5, y_start.type.integer.minimum_value)
+        self.assertEqual((4 * 255 + 1) * 5, y_start.type.integer.maximum_value)
 
     def test_non_constant_times_negative_constant(self):
         ir = self._make_ir(
@@ -442,10 +447,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual("20", y_start.type.integer.modulus)
-        self.assertEqual("15", y_start.type.integer.modular_value)
-        self.assertEqual(str((4 * 255 + 1) * -5), y_start.type.integer.minimum_value)
-        self.assertEqual("-5", y_start.type.integer.maximum_value)
+        self.assertEqual(20, y_start.type.integer.modulus)
+        self.assertEqual(15, y_start.type.integer.modular_value)
+        self.assertEqual((4 * 255 + 1) * -5, y_start.type.integer.minimum_value)
+        self.assertEqual(-5, y_start.type.integer.maximum_value)
 
     def test_non_constant_times_zero(self):
         ir = self._make_ir(
@@ -453,10 +458,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         y_start = ir.module[0].type[0].structure.field[1].location.start
-        self.assertEqual("infinity", y_start.type.integer.modulus)
-        self.assertEqual("0", y_start.type.integer.modular_value)
-        self.assertEqual("0", y_start.type.integer.minimum_value)
-        self.assertEqual("0", y_start.type.integer.maximum_value)
+        self.assertEqual(ir_num.INFINITY, y_start.type.integer.modulus)
+        self.assertEqual(0, y_start.type.integer.modular_value)
+        self.assertEqual(0, y_start.type.integer.minimum_value)
+        self.assertEqual(0, y_start.type.integer.maximum_value)
 
     def test_non_constant_times_non_constant_shared_modulus(self):
         ir = self._make_ir(
@@ -467,10 +472,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("4", z_start.type.integer.modulus)
-        self.assertEqual("1", z_start.type.integer.modular_value)
-        self.assertEqual("9", z_start.type.integer.minimum_value)
-        self.assertEqual(str((4 * 255 + 3) ** 2), z_start.type.integer.maximum_value)
+        self.assertEqual(4, z_start.type.integer.modulus)
+        self.assertEqual(1, z_start.type.integer.modular_value)
+        self.assertEqual(9, z_start.type.integer.minimum_value)
+        self.assertEqual((4 * 255 + 3) ** 2, z_start.type.integer.maximum_value)
 
     def test_non_constant_times_non_constant_congruent_to_zero(self):
         ir = self._make_ir(
@@ -481,10 +486,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("16", z_start.type.integer.modulus)
-        self.assertEqual("0", z_start.type.integer.modular_value)
-        self.assertEqual("0", z_start.type.integer.minimum_value)
-        self.assertEqual(str((4 * 255) ** 2), z_start.type.integer.maximum_value)
+        self.assertEqual(16, z_start.type.integer.modulus)
+        self.assertEqual(0, z_start.type.integer.modular_value)
+        self.assertEqual(0, z_start.type.integer.minimum_value)
+        self.assertEqual((4 * 255) ** 2, z_start.type.integer.maximum_value)
 
     def test_non_constant_times_non_constant_partially_shared_modulus(self):
         ir = self._make_ir(
@@ -495,11 +500,11 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("4", z_start.type.integer.modulus)
-        self.assertEqual("1", z_start.type.integer.modular_value)
-        self.assertEqual("9", z_start.type.integer.minimum_value)
+        self.assertEqual(4, z_start.type.integer.modulus)
+        self.assertEqual(1, z_start.type.integer.modular_value)
+        self.assertEqual(9, z_start.type.integer.minimum_value)
         self.assertEqual(
-            str((4 * 255 + 3) * (8 * 255 + 3)), z_start.type.integer.maximum_value
+            (4 * 255 + 3) * (8 * 255 + 3), z_start.type.integer.maximum_value
         )
 
     def test_non_constant_times_non_constant_full_complexity(self):
@@ -511,11 +516,11 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("60", z_start.type.integer.modulus)
-        self.assertEqual("15", z_start.type.integer.modular_value)
-        self.assertEqual(str(9 * 15), z_start.type.integer.minimum_value)
+        self.assertEqual(60, z_start.type.integer.modulus)
+        self.assertEqual(15, z_start.type.integer.modular_value)
+        self.assertEqual(9 * 15, z_start.type.integer.minimum_value)
         self.assertEqual(
-            str((12 * 255 + 9) * (40 * 255 + 15)), z_start.type.integer.maximum_value
+            (12 * 255 + 9) * (40 * 255 + 15), z_start.type.integer.maximum_value
         )
 
     def test_signed_non_constant_times_signed_non_constant_full_complexity(self):
@@ -527,15 +532,15 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("60", z_start.type.integer.modulus)
-        self.assertEqual("15", z_start.type.integer.modular_value)
+        self.assertEqual(60, z_start.type.integer.modulus)
+        self.assertEqual(15, z_start.type.integer.modular_value)
         # Max x/min y is slightly lower than min x/max y (-7825965 vs -7780065).
         self.assertEqual(
-            str((12 * 127 + 9) * (40 * -128 + 15)), z_start.type.integer.minimum_value
+            (12 * 127 + 9) * (40 * -128 + 15), z_start.type.integer.minimum_value
         )
         # Max x/max y is slightly higher than min x/min y (7810635 vs 7795335).
         self.assertEqual(
-            str((12 * 127 + 9) * (40 * 127 + 15)), z_start.type.integer.maximum_value
+            (12 * 127 + 9) * (40 * 127 + 15), z_start.type.integer.maximum_value
         )
 
     def test_non_constant_times_non_constant_flipped_min_max(self):
@@ -547,10 +552,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("9", z_start.type.integer.modulus)
-        self.assertEqual("0", z_start.type.integer.modular_value)
-        self.assertEqual(str(-((3 * 255) ** 2)), z_start.type.integer.minimum_value)
-        self.assertEqual("0", z_start.type.integer.maximum_value)
+        self.assertEqual(9, z_start.type.integer.modulus)
+        self.assertEqual(0, z_start.type.integer.modular_value)
+        self.assertEqual(-((3 * 255) ** 2), z_start.type.integer.minimum_value)
+        self.assertEqual(0, z_start.type.integer.maximum_value)
 
     # Currently, only `$static_size_in_bits` has an infinite bound, so all of the
     # examples below use `$static_size_in_bits`.  Unfortunately, this also means
@@ -568,10 +573,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("2", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(2, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_negative_unbounded_plus_constant(self):
         ir = self._make_ir(
@@ -579,10 +584,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("2", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(2, expr.type.integer.maximum_value)
 
     def test_negative_unbounded_plus_unbounded(self):
         ir = self._make_ir(
@@ -591,10 +596,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_unbounded_minus_unbounded(self):
         ir = self._make_ir(
@@ -603,10 +608,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_unbounded_minus_negative_unbounded(self):
         ir = self._make_ir(
@@ -615,10 +620,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("0", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(0, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_unbounded_times_constant(self):
         ir = self._make_ir(
@@ -626,10 +631,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("2", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("2", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(2, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(2, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_unbounded_times_negative_constant(self):
         ir = self._make_ir(
@@ -637,10 +642,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("2", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("-2", expr.type.integer.maximum_value)
+        self.assertEqual(2, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(-2, expr.type.integer.maximum_value)
 
     def test_unbounded_times_negative_zero(self):
         ir = self._make_ir(
@@ -648,10 +653,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("infinity", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("0", expr.type.integer.minimum_value)
-        self.assertEqual("0", expr.type.integer.maximum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(0, expr.type.integer.minimum_value)
+        self.assertEqual(0, expr.type.integer.maximum_value)
 
     def test_negative_unbounded_times_constant(self):
         ir = self._make_ir(
@@ -659,10 +664,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("2", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("2", expr.type.integer.maximum_value)
+        self.assertEqual(2, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(2, expr.type.integer.maximum_value)
 
     def test_double_unbounded_minus_unbounded(self):
         ir = self._make_ir(
@@ -671,10 +676,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_double_unbounded_times_negative_unbounded(self):
         ir = self._make_ir(
@@ -683,10 +688,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("2", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("0", expr.type.integer.maximum_value)
+        self.assertEqual(2, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(0, expr.type.integer.maximum_value)
 
     def test_upper_bound_of_field(self):
         ir = self._make_ir(
@@ -694,10 +699,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         u_type = ir.module[0].type[0].structure.field[1].read_transform.type
-        self.assertEqual("infinity", u_type.integer.modulus)
-        self.assertEqual("127", u_type.integer.maximum_value)
-        self.assertEqual("127", u_type.integer.minimum_value)
-        self.assertEqual("127", u_type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, u_type.integer.modulus)
+        self.assertEqual(127, u_type.integer.maximum_value)
+        self.assertEqual(127, u_type.integer.minimum_value)
+        self.assertEqual(127, u_type.integer.modular_value)
 
     def test_lower_bound_of_field(self):
         ir = self._make_ir(
@@ -705,10 +710,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         l_type = ir.module[0].type[0].structure.field[1].read_transform.type
-        self.assertEqual("infinity", l_type.integer.modulus)
-        self.assertEqual("-128", l_type.integer.maximum_value)
-        self.assertEqual("-128", l_type.integer.minimum_value)
-        self.assertEqual("-128", l_type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, l_type.integer.modulus)
+        self.assertEqual(-128, l_type.integer.maximum_value)
+        self.assertEqual(-128, l_type.integer.minimum_value)
+        self.assertEqual(-128, l_type.integer.modular_value)
 
     def test_upper_bound_of_max(self):
         ir = self._make_ir(
@@ -719,10 +724,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         u_type = ir.module[0].type[0].structure.field[2].read_transform.type
-        self.assertEqual("infinity", u_type.integer.modulus)
-        self.assertEqual("255", u_type.integer.maximum_value)
-        self.assertEqual("255", u_type.integer.minimum_value)
-        self.assertEqual("255", u_type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, u_type.integer.modulus)
+        self.assertEqual(255, u_type.integer.maximum_value)
+        self.assertEqual(255, u_type.integer.minimum_value)
+        self.assertEqual(255, u_type.integer.modular_value)
 
     def test_lower_bound_of_max(self):
         ir = self._make_ir(
@@ -733,10 +738,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         l_type = ir.module[0].type[0].structure.field[2].read_transform.type
-        self.assertEqual("infinity", l_type.integer.modulus)
-        self.assertEqual("0", l_type.integer.maximum_value)
-        self.assertEqual("0", l_type.integer.minimum_value)
-        self.assertEqual("0", l_type.integer.modular_value)
+        self.assertEqual(ir_num.INFINITY, l_type.integer.modulus)
+        self.assertEqual(0, l_type.integer.maximum_value)
+        self.assertEqual(0, l_type.integer.minimum_value)
+        self.assertEqual(0, l_type.integer.modular_value)
 
     def test_double_unbounded_both_ends_times_negative_unbounded(self):
         ir = self._make_ir(
@@ -746,10 +751,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         expr = ir.module[0].type[0].attribute[0].value.expression.function.args[0]
-        self.assertEqual("1", expr.type.integer.modulus)
-        self.assertEqual("0", expr.type.integer.modular_value)
-        self.assertEqual("-infinity", expr.type.integer.minimum_value)
-        self.assertEqual("infinity", expr.type.integer.maximum_value)
+        self.assertEqual(1, expr.type.integer.modulus)
+        self.assertEqual(0, expr.type.integer.modular_value)
+        self.assertEqual(ir_num.NEGATIVE_INFINITY, expr.type.integer.minimum_value)
+        self.assertEqual(ir_num.INFINITY, expr.type.integer.maximum_value)
 
     def test_choice_two_non_constant_integers(self):
         cases = [
@@ -773,10 +778,10 @@ class ComputeConstantsTest(unittest.TestCase):
             self.assertEqual([], expression_bounds.compute_constants(ir))
             field = ir.module[0].type[0].structure.field[2]
             expr = field.existence_condition.function.args[0]
-            self.assertEqual(str(r_mod), expr.type.integer.modulus)
-            self.assertEqual(str(r_val), expr.type.integer.modular_value)
-            self.assertEqual(str(r_min), expr.type.integer.minimum_value)
-            self.assertEqual(str(r_max), expr.type.integer.maximum_value)
+            self.assertEqual(r_mod, expr.type.integer.modulus)
+            self.assertEqual(r_val, expr.type.integer.modular_value)
+            self.assertEqual(r_min, expr.type.integer.minimum_value)
+            self.assertEqual(r_max, expr.type.integer.maximum_value)
 
     def test_choice_one_non_constant_integer(self):
         cases = [
@@ -802,21 +807,21 @@ class ComputeConstantsTest(unittest.TestCase):
             constant_true = field_constant_true.existence_condition.function.args[0]
             field_constant_false = ir.module[0].type[0].structure.field[3]
             constant_false = field_constant_false.existence_condition.function.args[0]
-            self.assertEqual(str(r_mod), constant_true.type.integer.modulus)
-            self.assertEqual(str(r_val), constant_true.type.integer.modular_value)
-            self.assertEqual(str(r_min), constant_true.type.integer.minimum_value)
-            self.assertEqual(str(r_max), constant_true.type.integer.maximum_value)
-            self.assertEqual(str(r_mod), constant_false.type.integer.modulus)
-            self.assertEqual(str(r_val), constant_false.type.integer.modular_value)
-            self.assertEqual(str(r_min), constant_false.type.integer.minimum_value)
-            self.assertEqual(str(r_max), constant_false.type.integer.maximum_value)
+            self.assertEqual(r_mod, constant_true.type.integer.modulus)
+            self.assertEqual(r_val, constant_true.type.integer.modular_value)
+            self.assertEqual(r_min, constant_true.type.integer.minimum_value)
+            self.assertEqual(r_max, constant_true.type.integer.maximum_value)
+            self.assertEqual(r_mod, constant_false.type.integer.modulus)
+            self.assertEqual(r_val, constant_false.type.integer.modular_value)
+            self.assertEqual(r_min, constant_false.type.integer.minimum_value)
+            self.assertEqual(r_max, constant_false.type.integer.maximum_value)
 
     def test_choice_two_constant_integers(self):
         cases = [
             # t == 10 and f == 7 ==> res % 3 == 1
             (10, 7, 3, 1, 7, 10),
             # t == 4 and f == 4 ==> res == 4
-            (4, 4, "infinity", 4, 4, 4),
+            (4, 4, ir_num.INFINITY, 4, 4, 4),
         ]
         for t_val, f_val, r_mod, r_val, r_min, r_max in cases:
             ir = self._make_ir(
@@ -829,10 +834,10 @@ class ComputeConstantsTest(unittest.TestCase):
             self.assertEqual([], expression_bounds.compute_constants(ir))
             field_constant_true = ir.module[0].type[0].structure.field[2]
             constant_true = field_constant_true.existence_condition.function.args[0]
-            self.assertEqual(str(r_mod), constant_true.type.integer.modulus)
-            self.assertEqual(str(r_val), constant_true.type.integer.modular_value)
-            self.assertEqual(str(r_min), constant_true.type.integer.minimum_value)
-            self.assertEqual(str(r_max), constant_true.type.integer.maximum_value)
+            self.assertEqual(r_mod, constant_true.type.integer.modulus)
+            self.assertEqual(r_val, constant_true.type.integer.modular_value)
+            self.assertEqual(r_min, constant_true.type.integer.minimum_value)
+            self.assertEqual(r_max, constant_true.type.integer.maximum_value)
 
     def test_constant_true_has(self):
         ir = self._make_ir(
@@ -894,10 +899,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[2]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("infinity", max_func.type.integer.modulus)
-        self.assertEqual("2", max_func.type.integer.modular_value)
-        self.assertEqual("2", max_func.type.integer.minimum_value)
-        self.assertEqual("2", max_func.type.integer.maximum_value)
+        self.assertEqual(ir_num.INFINITY, max_func.type.integer.modulus)
+        self.assertEqual(2, max_func.type.integer.modular_value)
+        self.assertEqual(2, max_func.type.integer.minimum_value)
+        self.assertEqual(2, max_func.type.integer.maximum_value)
 
     def test_max_dominated_by_constant(self):
         ir = self._make_ir(
@@ -910,10 +915,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[2]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("infinity", max_func.type.integer.modulus)
-        self.assertEqual("255", max_func.type.integer.modular_value)
-        self.assertEqual("255", max_func.type.integer.minimum_value)
-        self.assertEqual("255", max_func.type.integer.maximum_value)
+        self.assertEqual(ir_num.INFINITY, max_func.type.integer.modulus)
+        self.assertEqual(255, max_func.type.integer.modular_value)
+        self.assertEqual(255, max_func.type.integer.minimum_value)
+        self.assertEqual(255, max_func.type.integer.maximum_value)
 
     def test_max_of_variables(self):
         ir = self._make_ir(
@@ -926,10 +931,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[2]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("1", max_func.type.integer.modulus)
-        self.assertEqual("0", max_func.type.integer.modular_value)
-        self.assertEqual("0", max_func.type.integer.minimum_value)
-        self.assertEqual("255", max_func.type.integer.maximum_value)
+        self.assertEqual(1, max_func.type.integer.modulus)
+        self.assertEqual(0, max_func.type.integer.modular_value)
+        self.assertEqual(0, max_func.type.integer.minimum_value)
+        self.assertEqual(255, max_func.type.integer.maximum_value)
 
     def test_max_of_variables_with_shared_modulus(self):
         ir = self._make_ir(
@@ -942,10 +947,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[2]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("2", max_func.type.integer.modulus)
-        self.assertEqual("1", max_func.type.integer.modular_value)
-        self.assertEqual("5", max_func.type.integer.minimum_value)
-        self.assertEqual("2045", max_func.type.integer.maximum_value)
+        self.assertEqual(2, max_func.type.integer.modulus)
+        self.assertEqual(1, max_func.type.integer.modular_value)
+        self.assertEqual(5, max_func.type.integer.minimum_value)
+        self.assertEqual(2045, max_func.type.integer.maximum_value)
 
     def test_max_of_three_variables(self):
         ir = self._make_ir(
@@ -959,10 +964,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[3]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("1", max_func.type.integer.modulus)
-        self.assertEqual("0", max_func.type.integer.modular_value)
-        self.assertEqual("0", max_func.type.integer.minimum_value)
-        self.assertEqual("32767", max_func.type.integer.maximum_value)
+        self.assertEqual(1, max_func.type.integer.modulus)
+        self.assertEqual(0, max_func.type.integer.modular_value)
+        self.assertEqual(0, max_func.type.integer.minimum_value)
+        self.assertEqual(32767, max_func.type.integer.maximum_value)
 
     def test_max_of_one_variable(self):
         ir = self._make_ir(
@@ -976,10 +981,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[3]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("2", max_func.type.integer.modulus)
-        self.assertEqual("1", max_func.type.integer.modular_value)
-        self.assertEqual("3", max_func.type.integer.minimum_value)
-        self.assertEqual("513", max_func.type.integer.maximum_value)
+        self.assertEqual(2, max_func.type.integer.modulus)
+        self.assertEqual(1, max_func.type.integer.modular_value)
+        self.assertEqual(3, max_func.type.integer.minimum_value)
+        self.assertEqual(513, max_func.type.integer.maximum_value)
 
     def test_max_of_one_variable_and_one_constant(self):
         ir = self._make_ir(
@@ -993,10 +998,10 @@ class ComputeConstantsTest(unittest.TestCase):
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field = ir.module[0].type[0].structure.field[3]
         max_func = field.existence_condition.function.args[0]
-        self.assertEqual("2", max_func.type.integer.modulus)
-        self.assertEqual("1", max_func.type.integer.modular_value)
-        self.assertEqual("311", max_func.type.integer.minimum_value)
-        self.assertEqual("513", max_func.type.integer.maximum_value)
+        self.assertEqual(2, max_func.type.integer.modulus)
+        self.assertEqual(1, max_func.type.integer.modular_value)
+        self.assertEqual(311, max_func.type.integer.minimum_value)
+        self.assertEqual(513, max_func.type.integer.maximum_value)
 
     def test_choice_non_integer_arguments(self):
         ir = self._make_ir(
@@ -1019,10 +1024,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         z_start = ir.module[0].type[0].structure.field[2].location.start
-        self.assertEqual("1", z_start.type.integer.modulus)
-        self.assertEqual("0", z_start.type.integer.modular_value)
-        self.assertEqual("0", z_start.type.integer.minimum_value)
-        self.assertEqual("65535", z_start.type.integer.maximum_value)
+        self.assertEqual(1, z_start.type.integer.modulus)
+        self.assertEqual(0, z_start.type.integer.modular_value)
+        self.assertEqual(0, z_start.type.integer.minimum_value)
+        self.assertEqual(65535, z_start.type.integer.maximum_value)
 
     def test_uint_value_ranges(self):
         cases = [
@@ -1047,10 +1052,10 @@ class ComputeConstantsTest(unittest.TestCase):
             )
             self.assertEqual([], expression_bounds.compute_constants(ir))
             z_start = ir.module[0].type[0].structure.field[2].location.start
-            self.assertEqual("1", z_start.type.integer.modulus)
-            self.assertEqual("0", z_start.type.integer.modular_value)
-            self.assertEqual("0", z_start.type.integer.minimum_value)
-            self.assertEqual(str(upper), z_start.type.integer.maximum_value)
+            self.assertEqual(1, z_start.type.integer.modulus)
+            self.assertEqual(0, z_start.type.integer.modular_value)
+            self.assertEqual(0, z_start.type.integer.minimum_value)
+            self.assertEqual(upper, z_start.type.integer.maximum_value)
 
     def test_int_value_ranges(self):
         cases = [
@@ -1075,10 +1080,10 @@ class ComputeConstantsTest(unittest.TestCase):
             )
             self.assertEqual([], expression_bounds.compute_constants(ir))
             z_start = ir.module[0].type[0].structure.field[2].location.start
-            self.assertEqual("1", z_start.type.integer.modulus)
-            self.assertEqual("0", z_start.type.integer.modular_value)
-            self.assertEqual(str(lower), z_start.type.integer.minimum_value)
-            self.assertEqual(str(upper), z_start.type.integer.maximum_value)
+            self.assertEqual(1, z_start.type.integer.modulus)
+            self.assertEqual(0, z_start.type.integer.modular_value)
+            self.assertEqual(lower, z_start.type.integer.minimum_value)
+            self.assertEqual(upper, z_start.type.integer.maximum_value)
 
     def test_bcd_value_ranges(self):
         cases = [
@@ -1103,10 +1108,10 @@ class ComputeConstantsTest(unittest.TestCase):
             )
             self.assertEqual([], expression_bounds.compute_constants(ir))
             z_start = ir.module[0].type[0].structure.field[2].location.start
-            self.assertEqual("1", z_start.type.integer.modulus)
-            self.assertEqual("0", z_start.type.integer.modular_value)
-            self.assertEqual("0", z_start.type.integer.minimum_value)
-            self.assertEqual(str(upper), z_start.type.integer.maximum_value)
+            self.assertEqual(1, z_start.type.integer.modulus)
+            self.assertEqual(0, z_start.type.integer.modular_value)
+            self.assertEqual(0, z_start.type.integer.minimum_value)
+            self.assertEqual(upper, z_start.type.integer.maximum_value)
 
     def test_virtual_field_bounds(self):
         ir = self._make_ir(
@@ -1114,10 +1119,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field_y = ir.module[0].type[0].structure.field[1]
-        self.assertEqual("1", field_y.read_transform.type.integer.modulus)
-        self.assertEqual("0", field_y.read_transform.type.integer.modular_value)
-        self.assertEqual("10", field_y.read_transform.type.integer.minimum_value)
-        self.assertEqual("265", field_y.read_transform.type.integer.maximum_value)
+        self.assertEqual(1, field_y.read_transform.type.integer.modulus)
+        self.assertEqual(0, field_y.read_transform.type.integer.modular_value)
+        self.assertEqual(10, field_y.read_transform.type.integer.minimum_value)
+        self.assertEqual(265, field_y.read_transform.type.integer.maximum_value)
 
     def test_virtual_field_bounds_copied(self):
         ir = self._make_ir(
@@ -1128,15 +1133,15 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field_z = ir.module[0].type[0].structure.field[0]
-        self.assertEqual("1", field_z.read_transform.type.integer.modulus)
-        self.assertEqual("0", field_z.read_transform.type.integer.modular_value)
-        self.assertEqual("110", field_z.read_transform.type.integer.minimum_value)
-        self.assertEqual("365", field_z.read_transform.type.integer.maximum_value)
+        self.assertEqual(1, field_z.read_transform.type.integer.modulus)
+        self.assertEqual(0, field_z.read_transform.type.integer.modular_value)
+        self.assertEqual(110, field_z.read_transform.type.integer.minimum_value)
+        self.assertEqual(365, field_z.read_transform.type.integer.maximum_value)
         y_reference = field_z.read_transform.function.args[0]
-        self.assertEqual("1", y_reference.type.integer.modulus)
-        self.assertEqual("0", y_reference.type.integer.modular_value)
-        self.assertEqual("10", y_reference.type.integer.minimum_value)
-        self.assertEqual("265", y_reference.type.integer.maximum_value)
+        self.assertEqual(1, y_reference.type.integer.modulus)
+        self.assertEqual(0, y_reference.type.integer.modular_value)
+        self.assertEqual(10, y_reference.type.integer.minimum_value)
+        self.assertEqual(265, y_reference.type.integer.maximum_value)
 
     def test_constant_reference_to_virtual_bounds_copied(self):
         ir = self._make_ir(
@@ -1149,10 +1154,10 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field_ten = ir.module[0].type[0].structure.field[0]
-        self.assertEqual("infinity", field_ten.read_transform.type.integer.modulus)
-        self.assertEqual("10", field_ten.read_transform.type.integer.modular_value)
-        self.assertEqual("10", field_ten.read_transform.type.integer.minimum_value)
-        self.assertEqual("10", field_ten.read_transform.type.integer.maximum_value)
+        self.assertEqual(ir_num.INFINITY, field_ten.read_transform.type.integer.modulus)
+        self.assertEqual(10, field_ten.read_transform.type.integer.modular_value)
+        self.assertEqual(10, field_ten.read_transform.type.integer.minimum_value)
+        self.assertEqual(10, field_ten.read_transform.type.integer.maximum_value)
         field_truth = ir.module[0].type[0].structure.field[1]
         self.assertTrue(field_truth.read_transform.type.boolean.value)
 
@@ -1166,59 +1171,7 @@ class ComputeConstantsTest(unittest.TestCase):
         )
         self.assertEqual([], expression_bounds.compute_constants(ir))
         field_ten = ir.module[0].type[0].structure.field[0]
-        self.assertEqual("10", field_ten.read_transform.type.enumeration.value)
-
-
-class InfinityAugmentedArithmeticTest(unittest.TestCase):
-
-    # TODO(bolms): Will there ever be any situations where all elements of the arg
-    # to _min would be "infinity"?
-    def test_min_of_infinities(self):
-        self.assertEqual("infinity", expression_bounds._min(["infinity", "infinity"]))
-
-    # TODO(bolms): Will there ever be any situations where all elements of the arg
-    # to _max would be "-infinity"?
-    def test_max_of_negative_infinities(self):
-        self.assertEqual(
-            "-infinity", expression_bounds._max(["-infinity", "-infinity"])
-        )
-
-    def test_shared_modular_value_of_identical_modulus_and_value(self):
-        self.assertEqual(
-            (10, 8), expression_bounds._shared_modular_value((10, 8), (10, 8))
-        )
-
-    def test_shared_modular_value_of_identical_modulus(self):
-        self.assertEqual(
-            (5, 3), expression_bounds._shared_modular_value((10, 8), (10, 3))
-        )
-
-    def test_shared_modular_value_of_identical_value(self):
-        self.assertEqual(
-            (6, 2), expression_bounds._shared_modular_value((18, 2), (12, 2))
-        )
-
-    def test_shared_modular_value_of_different_arguments(self):
-        self.assertEqual(
-            (7, 4), expression_bounds._shared_modular_value((21, 11), (14, 4))
-        )
-
-    def test_shared_modular_value_of_infinity_and_non(self):
-        self.assertEqual(
-            (7, 4), expression_bounds._shared_modular_value(("infinity", 25), (14, 4))
-        )
-
-    def test_shared_modular_value_of_infinity_and_infinity(self):
-        self.assertEqual(
-            (14, 5),
-            expression_bounds._shared_modular_value(("infinity", 19), ("infinity", 5)),
-        )
-
-    def test_shared_modular_value_of_infinity_and_identical_value(self):
-        self.assertEqual(
-            ("infinity", 5),
-            expression_bounds._shared_modular_value(("infinity", 5), ("infinity", 5)),
-        )
+        self.assertEqual(10, field_ten.read_transform.type.enumeration.value)
 
 
 if __name__ == "__main__":

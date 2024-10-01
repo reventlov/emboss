@@ -25,6 +25,7 @@ fed to lr1.Grammar in order to create a parser for the Emboss language.
 import re
 import sys
 
+from compiler.util import ir_num
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
 from compiler.util import name_conversion
@@ -724,7 +725,8 @@ def _negation_expression_with_operator(operator, expression):
             args=[
                 ir_data.Expression(
                     constant=ir_data.NumericConstant(
-                        value="0", source_location=phantom_zero_location
+                        value=ir_num.Num(0),
+                        source_location=phantom_zero_location,
                     ),
                     source_location=phantom_zero_location,
                 ),
@@ -833,15 +835,15 @@ def _field_reference_tail(dot, reference):
 
 @_handles("numeric-constant -> Number")
 def _numeric_constant(number):
-    # All types of numeric constant tokenize to the same symbol, because they are
-    # interchangeable in source code.
+    # All types of numeric constant tokenize to the same symbol, because they
+    # are interchangeable in source code.
     if number.text[0:2] == "0b":
         n = int(number.text.replace("_", "")[2:], 2)
     elif number.text[0:2] == "0x":
         n = int(number.text.replace("_", "")[2:], 16)
     else:
         n = int(number.text.replace("_", ""), 10)
-    return ir_data.NumericConstant(value=str(n))
+    return ir_data.NumericConstant(value=ir_num.Num(n))
 
 
 @_handles("type-definition -> struct")

@@ -269,16 +269,16 @@ class SyntheticsTest(unittest.TestCase):
         self.assertEqual(
             offset_of_b.function.function, ir_data.FunctionMapping.ADDITION
         )
-        self.assertEqual(offset_of_b.function.args[0].constant.value, "1")
-        self.assertEqual(offset_of_b.function.args[1].constant.value, "2")
+        self.assertEqual(offset_of_b.function.args[0].constant.value, 1)
+        self.assertEqual(offset_of_b.function.args[1].constant.value, 2)
         offset_of_c = ir.module[0].type[0].structure.field[2].location.start
         self.assertEqual(
-            offset_of_c.function.args[0].function.args[0].constant.value, "1"
+            offset_of_c.function.args[0].function.args[0].constant.value, 1
         )
         self.assertEqual(
-            offset_of_c.function.args[0].function.args[1].constant.value, "2"
+            offset_of_c.function.args[0].function.args[1].constant.value, 2
         )
-        self.assertEqual(offset_of_c.function.args[1].constant.value, "4")
+        self.assertEqual(offset_of_c.function.args[1].constant.value, 4)
 
     def test_next_in_first_field(self):
         ir = self._make_ir(

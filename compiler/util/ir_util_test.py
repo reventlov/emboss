@@ -15,6 +15,8 @@
 """Tests for util.ir_util."""
 
 import unittest
+
+from compiler.util import ir_num
 from compiler.util import expression_parser
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
@@ -48,7 +50,7 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Expression(
                     constant_reference=ir_data.Reference(),
                     type=ir_data.ExpressionType(
-                        enumeration=ir_data.EnumType(value="12")
+                        enumeration=ir_data.EnumType(value=ir_num.Num(12))
                     ),
                 )
             )
@@ -59,10 +61,10 @@ class IrUtilTest(unittest.TestCase):
             ir_util.is_constant_type(
                 ir_data.ExpressionType(
                     integer=ir_data.IntegerType(
-                        modulus="10",
-                        modular_value="5",
-                        minimum_value="-5",
-                        maximum_value="15",
+                        modulus=ir_num.Num(10),
+                        modular_value=ir_num.Num(5),
+                        minimum_value=ir_num.Num(-5),
+                        maximum_value=ir_num.Num(15),
                     )
                 )
             )
@@ -71,10 +73,10 @@ class IrUtilTest(unittest.TestCase):
             ir_util.is_constant_type(
                 ir_data.ExpressionType(
                     integer=ir_data.IntegerType(
-                        modulus="infinity",
-                        modular_value="5",
-                        minimum_value="5",
-                        maximum_value="5",
+                        modulus=ir_num.Num("infinity"),
+                        modular_value=ir_num.Num(5),
+                        minimum_value=ir_num.Num(5),
+                        maximum_value=ir_num.Num(5),
                     )
                 )
             )
@@ -105,7 +107,9 @@ class IrUtilTest(unittest.TestCase):
         )
         self.assertTrue(
             ir_util.is_constant_type(
-                ir_data.ExpressionType(enumeration=ir_data.EnumType(value="0"))
+                ir_data.ExpressionType(
+                    enumeration=ir_data.EnumType(value=ir_num.Num(0))
+                )
             )
         )
 
@@ -191,7 +195,7 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Expression(
                     constant_reference=ir_data.Reference(),
                     type=ir_data.ExpressionType(
-                        enumeration=ir_data.EnumType(value="12")
+                        enumeration=ir_data.EnumType(value=ir_num.Num(12))
                     ),
                 )
             ),
@@ -205,7 +209,8 @@ class IrUtilTest(unittest.TestCase):
                     constant_reference=ir_data.Reference(),
                     type=ir_data.ExpressionType(
                         integer=ir_data.IntegerType(
-                            modulus="infinity", modular_value="12"
+                            modulus=ir_num.Num("infinity"),
+                            modular_value=ir_num.Num(12),
                         )
                     ),
                 )
@@ -423,10 +428,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="20"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(20)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="20", modulus="infinity"
+                                    modular_value=ir_num.Num(20),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -437,10 +443,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="10"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(10)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="10", modulus="infinity"
+                                    modular_value=ir_num.Num(10),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -450,10 +457,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="5"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(5)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="5", modulus="infinity"
+                                    modular_value=ir_num.Num(5),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -463,10 +471,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="0"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(0)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="0", modulus="infinity"
+                                    modular_value=ir_num.Num(0),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -477,10 +486,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="30"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(30)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="30", modulus="infinity"
+                                    modular_value=ir_num.Num(30),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -495,18 +505,24 @@ class IrUtilTest(unittest.TestCase):
                                 function=ir_data.FunctionMapping.ADDITION,
                                 args=[
                                     ir_data.Expression(
-                                        constant=ir_data.NumericConstant(value="100"),
+                                        constant=ir_data.NumericConstant(
+                                            value=ir_num.Num(100)
+                                        ),
                                         type=ir_data.ExpressionType(
                                             integer=ir_data.IntegerType(
-                                                modular_value="100", modulus="infinity"
+                                                modular_value=ir_num.Num(100),
+                                                modulus=ir_num.Num("infinity"),
                                             )
                                         ),
                                     ),
                                     ir_data.Expression(
-                                        constant=ir_data.NumericConstant(value="100"),
+                                        constant=ir_data.NumericConstant(
+                                            value=ir_num.Num(100)
+                                        ),
                                         type=ir_data.ExpressionType(
                                             integer=ir_data.IntegerType(
-                                                modular_value="100", modulus="infinity"
+                                                modular_value=ir_num.Num(100),
+                                                modulus=ir_num.Num("infinity"),
                                             )
                                         ),
                                     ),
@@ -514,7 +530,8 @@ class IrUtilTest(unittest.TestCase):
                             ),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="200", modulus="infinity"
+                                    modular_value=ir_num.Num(200),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )
@@ -524,10 +541,11 @@ class IrUtilTest(unittest.TestCase):
                 ir_data.Attribute(
                     value=ir_data.AttributeValue(
                         expression=ir_data.Expression(
-                            constant=ir_data.NumericConstant(value="40"),
+                            constant=ir_data.NumericConstant(value=ir_num.Num(40)),
                             type=ir_data.ExpressionType(
                                 integer=ir_data.IntegerType(
-                                    modular_value="40", modulus="infinity"
+                                    modular_value=ir_num.Num(40),
+                                    modulus=ir_num.Num("infinity"),
                                 )
                             ),
                         )

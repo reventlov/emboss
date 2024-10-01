@@ -99,7 +99,7 @@ class WriteInferenceTest(unittest.TestCase):
         self.assertEqual(
             "$logical_value", arg0.builtin_reference.canonical_name.object_path[0]
         )
-        self.assertEqual("50", arg1.constant.value)
+        self.assertEqual(50, arg1.constant.value)
 
     def test_adds_transform_write_method_to_negative_base_value_field(self):
         ir = self._make_ir("struct Foo:\n" "  0 [+1]  UInt  x\n" "  let y = x - 50\n")
@@ -117,7 +117,7 @@ class WriteInferenceTest(unittest.TestCase):
         self.assertEqual(
             "$logical_value", arg0.builtin_reference.canonical_name.object_path[0]
         )
-        self.assertEqual("50", arg1.constant.value)
+        self.assertEqual(50, arg1.constant.value)
 
     def test_adds_transform_write_method_to_reversed_base_value_field(self):
         ir = self._make_ir("struct Foo:\n" "  0 [+1]  UInt  x\n" "  let y = 50 + x\n")
@@ -136,7 +136,7 @@ class WriteInferenceTest(unittest.TestCase):
         self.assertEqual(
             "$logical_value", arg0.builtin_reference.canonical_name.object_path[0]
         )
-        self.assertEqual("50", arg1.constant.value)
+        self.assertEqual(50, arg1.constant.value)
 
     def test_adds_transform_write_method_to_reversed_negative_base_value_field(self):
         ir = self._make_ir("struct Foo:\n" "  0 [+1]  UInt  x\n" "  let y = 50 - x\n")
@@ -152,7 +152,7 @@ class WriteInferenceTest(unittest.TestCase):
             transform.function_body.function.function,
         )
         arg0, arg1 = transform.function_body.function.args
-        self.assertEqual("50", arg0.constant.value)
+        self.assertEqual(50, arg0.constant.value)
         self.assertEqual(
             "$logical_value", arg1.builtin_reference.canonical_name.object_path[0]
         )
@@ -173,13 +173,13 @@ class WriteInferenceTest(unittest.TestCase):
             transform.function_body.function.function,
         )
         arg0, arg1 = transform.function_body.function.args
-        self.assertEqual("50", arg0.constant.value)
+        self.assertEqual(50, arg0.constant.value)
         self.assertEqual(ir_data.FunctionMapping.SUBTRACTION, arg1.function.function)
         arg10, arg11 = arg1.function.args
         self.assertEqual(
             "$logical_value", arg10.builtin_reference.canonical_name.object_path[0]
         )
-        self.assertEqual("30", arg11.constant.value)
+        self.assertEqual(30, arg11.constant.value)
 
     def test_does_not_add_transform_write_method_for_parameter_target(self):
         ir = self._make_ir("struct Foo(x: UInt:8):\n" "  let y = 50 + x\n")

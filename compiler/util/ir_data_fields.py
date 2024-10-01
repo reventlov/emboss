@@ -55,6 +55,8 @@ from typing import (
     get_origin,
 )
 
+from compiler.util import ir_num
+
 
 class IrDataclassInstance(Protocol):
     """Type bound for an IR dataclass instance."""
@@ -131,6 +133,7 @@ class FieldSpec(NamedTuple):
       - `is_sequence`: `container is FieldContainer.LIST`
       - `is_enum`: `issubclass(data_type, enum.Enum)`
       - `is_oneof`: `oneof is not None`
+      - `is_ir_num`: `issubclass(data_type, ir_num.Num`
 
     Use `make_field_spec` to automatically fill in the cached operations.
     """
@@ -143,6 +146,7 @@ class FieldSpec(NamedTuple):
     is_sequence: bool
     is_enum: bool
     is_oneof: bool
+    is_ir_num: bool
 
 
 def make_field_spec(
@@ -158,6 +162,7 @@ def make_field_spec(
         is_sequence=container is FieldContainer.LIST,
         is_enum=issubclass(data_type, enum.Enum),
         is_oneof=oneof is not None,
+        is_ir_num=issubclass(data_type, ir_num.Num),
     )
 
 
@@ -165,7 +170,7 @@ def build_default(field_spec: FieldSpec):
     """Builds a default instance of the given field"""
     if field_spec.is_sequence:
         return CopyValuesList(field_spec.data_type)
-    if field_spec.is_enum:
+    if field_spec.is_enum or field_spec.is_ir_num:
         return field_spec.data_type(int())
     return field_spec.data_type()
 

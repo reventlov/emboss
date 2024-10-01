@@ -22,6 +22,7 @@ import enum
 import sys
 from typing import ClassVar, Optional
 
+from compiler.util import ir_num
 from compiler.util import ir_data_fields
 
 
@@ -197,12 +198,7 @@ class Empty(Message):
 class NumericConstant(Message):
     """IR for any numeric constant."""
 
-    # Numeric constants are stored as decimal strings; this is the simplest way
-    # to store the full -2**63..+2**64 range.
-    #
-    # TODO(bolms): switch back to int, and just use strings during
-    # serialization, now that we're free of proto.
-    value: Optional[str] = None
+    value: Optional[ir_num.Num] = None
     source_location: Optional[Location] = None
 
 
@@ -447,7 +443,7 @@ class IntegerType(Message):
     # the value from C's '%' operator when the dividend is negative: in C, -7 %
     # 4 == -3, but the modular_value here would be 1.  Python uses modulus: in
     # Python, -7 % 4 == 1.
-    modulus: Optional[str] = None
+    modulus: Optional[ir_num.Num] = None
     """The modulus portion of the modular congruence of an integer expression.
 
   The modulus may be the special value "infinity" to indicate that the
@@ -456,7 +452,7 @@ class IntegerType(Message):
 
   A modulus of 1 places no constraints on the value.
   """
-    modular_value: Optional[str] = None
+    modular_value: Optional[ir_num.Num] = None
     """ The modular_value portion of the modular congruence of an integer expression.
 
   The modular_value should always be a nonnegative integer that is smaller
@@ -478,8 +474,8 @@ class IntegerType(Message):
     # Expression may only be evaluated during compilation; the back end should
     # never need to compile such an expression into the target language (e.g.,
     # C++).
-    minimum_value: Optional[str] = None
-    maximum_value: Optional[str] = None
+    minimum_value: Optional[ir_num.Num] = None
+    maximum_value: Optional[ir_num.Num] = None
 
 
 @dataclasses.dataclass
@@ -490,7 +486,7 @@ class BooleanType(Message):
 @dataclasses.dataclass
 class EnumType(Message):
     name: Optional[Reference] = None
-    value: Optional[str] = None
+    value: Optional[ir_num.Num] = None
 
 
 @dataclasses.dataclass

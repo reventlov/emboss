@@ -14,22 +14,13 @@
 
 """Functions for proving mathematical properties of expressions."""
 
-import math
-import fractions
 import operator
 
+from compiler.util import ir_num
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
 from compiler.util import ir_util
 from compiler.util import traverse_ir
-
-
-# Create a local alias for math.gcd with a fallback to fractions.gcd if it is
-# not available. This can be dropped if pre-3.5 Python support is dropped.
-if hasattr(math, "gcd"):
-    _math_gcd = math.gcd
-else:
-    _math_gcd = fractions.gcd
 
 
 def compute_constraints_of_expression(expression, ir):
@@ -60,7 +51,7 @@ def _compute_constant_value_of_constant(expression):
     expression.type.integer.modular_value = value
     expression.type.integer.minimum_value = value
     expression.type.integer.maximum_value = value
-    expression.type.integer.modulus = "infinity"
+    expression.type.integer.modulus = ir_num.INFINITY
 
 
 def _compute_constant_value_of_constant_reference(expression, ir):
@@ -71,7 +62,7 @@ def _compute_constant_value_of_constant_reference(expression, ir):
     if isinstance(referred_object, ir_data.EnumValue):
         compute_constraints_of_expression(referred_object.value, ir)
         assert ir_util.is_constant(referred_object.value)
-        new_value = str(ir_util.constant_value(referred_object.value))
+        new_value = ir_util.constant_value(referred_object.value)
         expression.type.enumeration.value = new_value
     elif isinstance(referred_object, ir_data.Field):
         assert ir_util.field_is_virtual(referred_object), (
@@ -141,8 +132,8 @@ def _compute_constraints_of_field_reference(expression, ir):
     if expression.type.WhichOneof("type") == "integer":
         # TODO(bolms): These lines will need to change when support is added for
         # fixed-point types.
-        expression.type.integer.modulus = "1"
-        expression.type.integer.modular_value = "0"
+        expression.type.integer.modulus = ir_num.Num(1)
+        expression.type.integer.modular_value = ir_num.Num(0)
         type_definition = ir_util.find_parent_object(field_path, ir)
         if isinstance(field, ir_data.Field):
             referrent_type = field.type
@@ -185,19 +176,19 @@ def _set_integer_constraints_from_physical_type(expression, physical_type, type_
         # If the type_size is unknown, then we can't actually say anything about the
         # minimum and maximum values of the type.  For UInt, Int, and Bcd, an error
         # will be thrown during the constraints check stage.
-        expression.type.integer.minimum_value = "-infinity"
-        expression.type.integer.maximum_value = "infinity"
+        expression.type.integer.minimum_value = ir_num.NEGATIVE_INFINITY
+        expression.type.integer.maximum_value = ir_num.INFINITY
         return
     name = tuple(physical_type.atomic_type.reference.canonical_name.object_path)
     if name == ("UInt",):
-        expression.type.integer.minimum_value = "0"
-        expression.type.integer.maximum_value = str(2**type_size - 1)
+        expression.type.integer.minimum_value = ir_num.Num(0)
+        expression.type.integer.maximum_value = ir_num.Num(2**type_size - 1)
     elif name == ("Int",):
-        expression.type.integer.minimum_value = str(-(2 ** (type_size - 1)))
-        expression.type.integer.maximum_value = str(2 ** (type_size - 1) - 1)
+        expression.type.integer.minimum_value = ir_num.Num(-(2 ** (type_size - 1)))
+        expression.type.integer.maximum_value = ir_num.Num(2 ** (type_size - 1) - 1)
     elif name == ("Bcd",):
-        expression.type.integer.minimum_value = "0"
-        expression.type.integer.maximum_value = str(
+        expression.type.integer.minimum_value = ir_num.Num(0)
+        expression.type.integer.maximum_value = ir_num.Num(
             10 ** (type_size // 4) * 2 ** (type_size % 4) - 1
         )
     else:
@@ -216,16 +207,16 @@ def _compute_constraints_of_builtin_value(expression):
     """Computes the constraints of a builtin (like $static_size_in_bits)."""
     name = expression.builtin_reference.canonical_name.object_path[0]
     if name == "$static_size_in_bits":
-        expression.type.integer.modulus = "1"
-        expression.type.integer.modular_value = "0"
-        expression.type.integer.minimum_value = "0"
+        expression.type.integer.modulus = ir_num.Num(1)
+        expression.type.integer.modular_value = ir_num.Num(0)
+        expression.type.integer.minimum_value = ir_num.Num(0)
         # The maximum theoretically-supported size of something is 2**64 bytes,
         # which is 2**64 * 8 bits.
         #
         # Really, $static_size_in_bits is only valid in expressions that have to be
         # evaluated at compile time anyway, so it doesn't really matter if the
         # bounds are excessive.
-        expression.type.integer.maximum_value = "infinity"
+        expression.type.integer.maximum_value = ir_num.INFINITY
     elif name == "$is_statically_sized":
         # No bounds on a boolean variable.
         pass
@@ -239,10 +230,10 @@ def _compute_constraints_of_builtin_value(expression):
         # [requires] clause can be checked in Write, CouldWriteValue, TryToWrite,
         # Read, and Ok.
         if expression.type.WhichOneof("type") == "integer":
-            assert expression.type.integer.modulus
-            assert expression.type.integer.modular_value
-            assert expression.type.integer.minimum_value
-            assert expression.type.integer.maximum_value
+            assert expression.type.integer.modulus is not None
+            assert expression.type.integer.modular_value is not None
+            assert expression.type.integer.minimum_value is not None
+            assert expression.type.integer.maximum_value is not None
         elif expression.type.WhichOneof("type") == "enumeration":
             assert expression.type.enumeration.name
         elif expression.type.WhichOneof("type") == "boolean":
@@ -257,101 +248,23 @@ def _compute_constant_value_of_boolean_constant(expression):
     expression.type.boolean.value = expression.boolean_constant.value
 
 
-def _add(a, b):
-    """Adds a and b, where a and b are ints, "infinity", or "-infinity"."""
-    if a in ("infinity", "-infinity"):
-        a, b = b, a
-    if b == "infinity":
-        assert a != "-infinity"
-        return "infinity"
-    if b == "-infinity":
-        assert a != "infinity"
-        return "-infinity"
-    return int(a) + int(b)
-
-
-def _sub(a, b):
-    """Subtracts b from a, where a and b are ints, "infinity", or "-infinity"."""
-    if b == "infinity":
-        return _add(a, "-infinity")
-    if b == "-infinity":
-        return _add(a, "infinity")
-    return _add(a, -int(b))
-
-
-def _sign(a):
-    """Returns 1 if a > 0, 0 if a == 0, and -1 if a < 0."""
-    if a == "infinity":
-        return 1
-    if a == "-infinity":
-        return -1
-    if int(a) > 0:
-        return 1
-    if int(a) < 0:
-        return -1
-    return 0
-
-
-def _mul(a, b):
-    """Multiplies a and b, where a and b are ints, "infinity", or "-infinity"."""
-    if _is_infinite(a):
-        a, b = b, a
-    if _is_infinite(b):
-        sign = _sign(a) * _sign(b)
-        if sign > 0:
-            return "infinity"
-        if sign < 0:
-            return "-infinity"
-        return 0
-    return int(a) * int(b)
-
-
-def _is_infinite(a):
-    return a in ("infinity", "-infinity")
-
-
-def _max(a):
-    """Returns max of a, where elements are ints, "infinity", or "-infinity"."""
-    if any(n == "infinity" for n in a):
-        return "infinity"
-    if all(n == "-infinity" for n in a):
-        return "-infinity"
-    return max(int(n) for n in a if not _is_infinite(n))
-
-
-def _min(a):
-    """Returns min of a, where elements are ints, "infinity", or "-infinity"."""
-    if any(n == "-infinity" for n in a):
-        return "-infinity"
-    if all(n == "infinity" for n in a):
-        return "infinity"
-    return min(int(n) for n in a if not _is_infinite(n))
-
-
 def _compute_constraints_of_additive_operator(expression):
     """Computes the modular value of an additive expression."""
     funcs = {
-        ir_data.FunctionMapping.ADDITION: _add,
-        ir_data.FunctionMapping.SUBTRACTION: _sub,
+        ir_data.FunctionMapping.ADDITION: lambda x, y: x + y,
+        ir_data.FunctionMapping.SUBTRACTION: lambda x, y: x - y,
     }
     func = funcs[expression.function.function]
     args = expression.function.args
     for arg in args:
-        assert arg.type.integer.modular_value, str(expression)
+        assert arg.type.integer.modular_value is not None, str(expression)
     left, right = args
     unadjusted_modular_value = func(
         left.type.integer.modular_value, right.type.integer.modular_value
     )
-    new_modulus = _greatest_common_divisor(
-        left.type.integer.modulus, right.type.integer.modulus
-    )
-    expression.type.integer.modulus = str(new_modulus)
-    if new_modulus == "infinity":
-        expression.type.integer.modular_value = str(unadjusted_modular_value)
-    else:
-        expression.type.integer.modular_value = str(
-            unadjusted_modular_value % new_modulus
-        )
+    new_modulus = ir_num.gcd(left.type.integer.modulus, right.type.integer.modulus)
+    expression.type.integer.modulus = new_modulus
+    expression.type.integer.modular_value = unadjusted_modular_value % new_modulus
     lmax = left.type.integer.maximum_value
     lmin = left.type.integer.minimum_value
     if expression.function.function == ir_data.FunctionMapping.SUBTRACTION:
@@ -360,8 +273,8 @@ def _compute_constraints_of_additive_operator(expression):
     else:
         rmax = right.type.integer.maximum_value
         rmin = right.type.integer.minimum_value
-    expression.type.integer.minimum_value = str(func(lmin, rmin))
-    expression.type.integer.maximum_value = str(func(lmax, rmax))
+    expression.type.integer.minimum_value = func(lmin, rmin)
+    expression.type.integer.maximum_value = func(lmax, rmax)
 
 
 def _compute_constraints_of_multiplicative_operator(expression):
@@ -391,28 +304,29 @@ def _compute_constraints_of_multiplicative_operator(expression):
     # Emboss is not currently trying to be that smart.
     lmin, lmax = bounds[0].minimum_value, bounds[0].maximum_value
     rmin, rmax = bounds[1].minimum_value, bounds[1].maximum_value
-    extrema = [
-        _mul(lmax, rmax),
-        _mul(lmin, rmax),  #
-        _mul(lmax, rmin),
-        _mul(lmin, rmin),
-    ]
-    expression.type.integer.minimum_value = str(_min(extrema))
-    expression.type.integer.maximum_value = str(_max(extrema))
+    extrema = [lmax * rmax, lmin * rmax, lmax * rmin, lmin * rmin]
+    minimum_value = min(extrema)
+    maximum_value = max(extrema)
+    expression.type.integer.minimum_value = minimum_value
+    expression.type.integer.maximum_value = maximum_value
+    if minimum_value == maximum_value:
+        expression.type.integer.modular_value = minimum_value
+        expression.type.integer.modulus = ir_num.INFINITY
+        return
 
-    if all(bound.modulus == "infinity" for bound in bounds):
+    if all(bound.modulus.is_infinite() for bound in bounds):
         # If both sides are constant, the result is constant.
-        expression.type.integer.modulus = "infinity"
-        expression.type.integer.modular_value = str(
-            int(bounds[0].modular_value) * int(bounds[1].modular_value)
+        expression.type.integer.modulus = ir_num.INFINITY
+        expression.type.integer.modular_value = (
+            bounds[0].modular_value * bounds[1].modular_value
         )
         return
 
-    if any(bound.modulus == "infinity" for bound in bounds):
+    if any(bound.modulus.is_infinite() for bound in bounds):
         # If one side is constant and the other is not, then the non-constant
-        # modulus and modular_value can both be multiplied by the constant.  E.g.,
-        # if `a` is congruent to 3 mod 5, then `4 * a` will be congruent to 12 mod
-        # 20:
+        # modulus and modular_value can both be multiplied by the constant.
+        # E.g., if `a` is congruent to 3 mod 5, then `4 * a` will be congruent
+        # to 12 mod 20:
         #
         #   a = ...   |  4 * a = ...  |  4 * a mod 20 = ...
         #   3         |  12           |  12
@@ -423,29 +337,23 @@ def _compute_constraints_of_multiplicative_operator(expression):
         #   28        |  112          |  12
         #   33        |  132          |  12
         #
-        # This is trivially shown by noting that the difference between consecutive
-        # possible values for `4 * a` always differ by 20.
-        if bounds[0].modulus == "infinity":
+        # This is trivially shown by noting that the difference between
+        # consecutive possible values for `4 * a` always differ by 20.
+        if bounds[0].modulus == ir_num.INFINITY:
             constant, variable = bounds
         else:
             variable, constant = bounds
-        if int(constant.modular_value) == 0:
-            # If the constant is 0, the result is 0, no matter what the variable side
-            # is.
-            expression.type.integer.modulus = "infinity"
-            expression.type.integer.modular_value = "0"
-            return
-        new_modulus = int(variable.modulus) * abs(int(constant.modular_value))
-        expression.type.integer.modulus = str(new_modulus)
-        # The `% new_modulus` will force the `modular_value` to be positive, even
-        # when `constant.modular_value` is negative.
-        expression.type.integer.modular_value = str(
-            int(variable.modular_value) * int(constant.modular_value) % new_modulus
+        new_modulus = variable.modulus * abs(constant.modular_value)
+        expression.type.integer.modulus = new_modulus
+        # The `% new_modulus` will force the `modular_value` to be positive,
+        # even when `constant.modular_value` is negative.
+        expression.type.integer.modular_value = (
+            variable.modular_value * constant.modular_value % new_modulus
         )
         return
 
-    # If neither side is constant, then the result is more complex.  Full proof is
-    # available in g3doc/modular_congruence_multiplication_proof.md
+    # If neither side is constant, then the result is more complex.  Full proof
+    # is available in g3doc/modular_congruence_multiplication_proof.md
     #
     # Essentially, if:
     #
@@ -464,23 +372,19 @@ def _compute_constraints_of_multiplicative_operator(expression):
     product_of_modular_values = 1
     nonzero_congruence_moduli = []
     for bound in bounds:
-        zero_congruence_modulus = _greatest_common_divisor(
-            bound.modulus, bound.modular_value
-        )
-        assert int(bound.modulus) % zero_congruence_modulus == 0
+        zero_congruence_modulus = ir_num.gcd(bound.modulus, bound.modular_value)
+        assert bound.modulus % zero_congruence_modulus == 0
         product_of_zero_congruence_moduli *= zero_congruence_modulus
-        product_of_modular_values *= int(bound.modular_value)
-        nonzero_congruence_moduli.append(int(bound.modulus) // zero_congruence_modulus)
-    shared_nonzero_congruence_modulus = _greatest_common_divisor(
+        product_of_modular_values *= bound.modular_value
+        nonzero_congruence_moduli.append(bound.modulus // zero_congruence_modulus)
+    shared_nonzero_congruence_modulus = ir_num.gcd(
         nonzero_congruence_moduli[0], nonzero_congruence_moduli[1]
     )
     final_modulus = (
         shared_nonzero_congruence_modulus * product_of_zero_congruence_moduli
     )
-    expression.type.integer.modulus = str(final_modulus)
-    expression.type.integer.modular_value = str(
-        product_of_modular_values % final_modulus
-    )
+    expression.type.integer.modulus = final_modulus
+    expression.type.integer.modular_value = product_of_modular_values % final_modulus
 
 
 def _assert_integer_constraints(expression):
@@ -502,25 +406,26 @@ def _assert_integer_constraints(expression):
         None
     """
     bounds = expression.type.integer
-    if bounds.modulus == "infinity":
-        assert bounds.minimum_value == bounds.modular_value
-        assert bounds.maximum_value == bounds.modular_value
+    if bounds.modulus == ir_num.INFINITY:
+        assert bounds.minimum_value == bounds.modular_value, f"{bounds}"
+        assert bounds.maximum_value == bounds.modular_value, f"{bounds}"
         return
-    modulus = int(bounds.modulus)
+    modulus = bounds.modulus
     assert modulus > 0
-    if bounds.minimum_value != "-infinity":
-        assert int(bounds.minimum_value) % modulus == int(bounds.modular_value)
-    if bounds.maximum_value != "infinity":
-        assert int(bounds.maximum_value) % modulus == int(bounds.modular_value)
+    if bounds.minimum_value != ir_num.NEGATIVE_INFINITY:
+        assert bounds.minimum_value % modulus == bounds.modular_value
+    if bounds.maximum_value != ir_num.INFINITY:
+        assert bounds.maximum_value % modulus == bounds.modular_value
     if bounds.minimum_value == bounds.maximum_value:
-        # TODO(bolms): I believe there are situations using the not-yet-implemented
-        # integer division operator that would trigger these asserts, so they should
-        # be turned into assignments (with corresponding tests) when implementing
-        # division.
+        # TODO(bolms): I believe there are situations using the
+        # not-yet-implemented integer division operator that would trigger
+        # these asserts, so they should be turned into assignments (with
+        # corresponding tests) when implementing division.
         assert bounds.modular_value == bounds.minimum_value
-        assert bounds.modulus == "infinity"
-    if bounds.minimum_value != "-infinity" and bounds.maximum_value != "infinity":
-        assert int(bounds.minimum_value) <= int(bounds.maximum_value)
+        assert bounds.modulus == ir_num.INFINITY
+    assert (
+        bounds.minimum_value <= bounds.maximum_value
+    ), f"{bounds.minimum_value} > {bounds.maximum_value}"
 
 
 def _compute_constant_value_of_comparison_operator(expression):
@@ -554,7 +459,7 @@ def _compute_constraints_of_bound_function(expression):
     expression.type.integer.minimum_value = value
     expression.type.integer.maximum_value = value
     expression.type.integer.modular_value = value
-    expression.type.integer.modulus = "infinity"
+    expression.type.integer.modulus = ir_num.INFINITY
 
 
 def _compute_constraints_of_maximum_function(expression):
@@ -564,20 +469,18 @@ def _compute_constraints_of_maximum_function(expression):
     assert args[0].type.WhichOneof("type") == "integer"
     # The minimum value of the result occurs when every argument takes its minimum
     # value, which means that the minimum result is the maximum-of-minimums.
-    expression.type.integer.minimum_value = str(
-        _max([arg.type.integer.minimum_value for arg in args])
+    expression.type.integer.minimum_value = max(
+        [arg.type.integer.minimum_value for arg in args]
     )
     # The maximum result is the maximum-of-maximums.
-    expression.type.integer.maximum_value = str(
-        _max([arg.type.integer.maximum_value for arg in args])
+    expression.type.integer.maximum_value = max(
+        [arg.type.integer.maximum_value for arg in args]
     )
     # If the expression is dominated by a constant factor, then the result is
-    # constant.  I (bolms@) believe this is the only case where
-    # _compute_constraints_of_maximum_function might violate the assertions in
-    # _assert_integer_constraints.
+    # constant.
     if expression.type.integer.minimum_value == expression.type.integer.maximum_value:
         expression.type.integer.modular_value = expression.type.integer.minimum_value
-        expression.type.integer.modulus = "infinity"
+        expression.type.integer.modulus = ir_num.INFINITY
         return
     result_modulus = args[0].type.integer.modulus
     result_modular_value = args[0].type.integer.modular_value
@@ -589,7 +492,7 @@ def _compute_constraints_of_maximum_function(expression):
     # equivalent to $max(a, $max(b, $max(c, $max(d, ...)))), so it is valid to
     # call _shared_modular_value() in a loop.
     for arg in args[1:]:
-        # TODO(bolms): I think the bounds could be tigher in some cases where
+        # TODO(bolms): I think the bounds could be tighter in some cases where
         # arg.maximum_value is less than the new expression.minimum_value, and
         # in some very specific cases where arg.maximum_value is greater than the
         # new expression.minimum_value, but arg.maximum_value - arg.modulus is less
@@ -598,8 +501,8 @@ def _compute_constraints_of_maximum_function(expression):
             (result_modulus, result_modular_value),
             (arg.type.integer.modulus, arg.type.integer.modular_value),
         )
-    expression.type.integer.modulus = str(result_modulus)
-    expression.type.integer.modular_value = str(result_modular_value)
+    expression.type.integer.modulus = result_modulus
+    expression.type.integer.modular_value = result_modular_value
 
 
 def _shared_modular_value(left, right):
@@ -630,7 +533,7 @@ def _shared_modular_value(left, right):
     # incompatible modular_values.  The outer gcd finds a modulus to which both
     # modular_values are congruent.  Some examples:
     #
-    #     left          |  right         |  res
+    #     left          |  right         |  result
     #     --------------+----------------+--------------------
     #     l % 12 == 7   |  r % 20 == 15  |  res % 4 == 3
     #     l == 35       |  r % 20 == 15  |  res % 20 == 15
@@ -641,24 +544,20 @@ def _shared_modular_value(left, right):
     #     l == 4        |  r == 4        |  res == 4
     #
     # The cases where one side or the other are constant are handled
-    # automatically by the fact that _greatest_common_divisor("infinity", x)
-    # is x.
-    common_modulus = _greatest_common_divisor(left_modulus, right_modulus)
-    new_modulus = _greatest_common_divisor(
-        common_modulus, abs(int(left_modular_value) - int(right_modular_value))
+    # automatically by the fact that ir_num.gcd("infinity", x) is x.
+    common_modulus = ir_num.gcd(left_modulus, right_modulus)
+    new_modulus = ir_num.gcd(
+        common_modulus, abs(left_modular_value - right_modular_value)
     )
-    if new_modulus == "infinity":
+    if new_modulus == ir_num.INFINITY:
         # The only way for the new_modulus to come out as "infinity" *should* be
         # if both if_true and if_false have the same constant value.
         assert left_modular_value == right_modular_value
-        assert left_modulus == right_modulus == "infinity"
+        assert left_modulus == right_modulus == ir_num.INFINITY
         return new_modulus, left_modular_value
     else:
-        assert (
-            int(left_modular_value) % new_modulus
-            == int(right_modular_value) % new_modulus
-        )
-        return new_modulus, int(left_modular_value) % new_modulus
+        assert left_modular_value % new_modulus == right_modular_value % new_modulus
+        return new_modulus, left_modular_value % new_modulus
 
 
 def _compute_constraints_of_choice_operator(expression):
@@ -686,72 +585,25 @@ def _compute_constraints_of_choice_operator(expression):
     if if_true.type.WhichOneof("type") == "integer":
         # The minimum value of the choice is the minimum value of either side, and
         # the maximum is the maximum value of either side.
-        expression.type.integer.minimum_value = str(
-            _min(
-                [
-                    if_true.type.integer.minimum_value,
-                    if_false.type.integer.minimum_value,
-                ]
-            )
+        expression.type.integer.minimum_value = min(
+            if_true.type.integer.minimum_value,
+            if_false.type.integer.minimum_value,
         )
-        expression.type.integer.maximum_value = str(
-            _max(
-                [
-                    if_true.type.integer.maximum_value,
-                    if_false.type.integer.maximum_value,
-                ]
-            )
+        expression.type.integer.maximum_value = max(
+            if_true.type.integer.maximum_value,
+            if_false.type.integer.maximum_value,
         )
         new_modulus, new_modular_value = _shared_modular_value(
             (if_true.type.integer.modulus, if_true.type.integer.modular_value),
             (if_false.type.integer.modulus, if_false.type.integer.modular_value),
         )
-        expression.type.integer.modulus = str(new_modulus)
-        expression.type.integer.modular_value = str(new_modular_value)
+        expression.type.integer.modulus = new_modulus
+        expression.type.integer.modular_value = new_modular_value
     else:
         assert if_true.type.WhichOneof("type") in (
             "boolean",
             "enumeration",
         ), "Unknown type {} for expression".format(if_true.type.WhichOneof("type"))
-
-
-def _greatest_common_divisor(a, b):
-    """Returns the greatest common divisor of a and b.
-
-    Arguments:
-      a: an integer, a stringified integer, or the string "infinity"
-      b: an integer, a stringified integer, or the string "infinity"
-
-    Returns:
-      Conceptually, "infinity" is treated as the product of all integers.
-
-      If both a and b are 0, returns "infinity".
-
-      Otherwise, if either a or b are "infinity", and the other is 0, returns
-      "infinity".
-
-      Otherwise, if either a or b are "infinity", returns the other.
-
-      Otherwise, returns the greatest common divisor of a and b.
-    """
-    if a != "infinity":
-        a = int(a)
-    if b != "infinity":
-        b = int(b)
-    assert a == "infinity" or a >= 0
-    assert b == "infinity" or b >= 0
-    if a == b == 0:
-        return "infinity"
-    # GCD(0, x) is always x, so it's safe to shortcut when a == 0 or b == 0.
-    if a == 0:
-        return b
-    if b == 0:
-        return a
-    if a == "infinity":
-        return b
-    if b == "infinity":
-        return a
-    return _math_gcd(a, b)
 
 
 def compute_constants(ir):

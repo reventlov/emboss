@@ -70,6 +70,7 @@ py_library(
     name = "module_ir",
     srcs = ["module_ir.py"],
     deps = [
+        "//compiler/util:ir_num",
         "//compiler/util:ir_data",
         "//compiler/util:name_conversion",
         "//compiler/util:parser_types",
@@ -250,7 +251,9 @@ py_library(
 py_library(
     name = "attributes",
     srcs = ["attributes.py"],
-    deps = [],
+    deps = [
+        "//compiler/util:ir_num",
+    ],
 )
 
 py_test(
@@ -300,6 +303,7 @@ py_library(
     ],
     deps = [
         ":attributes",
+        "//compiler/util:ir_num",
         "//compiler/util:ir_data",
         "//compiler/util:ir_util",
         "//compiler/util:traverse_ir",
@@ -313,6 +317,7 @@ py_test(
     deps = [
         ":expression_bounds",
         ":glue",
+        "//compiler/util:ir_num",
         "//compiler/util:test_util",
     ],
 )
@@ -325,6 +330,7 @@ py_library(
     ],
     deps = [
         ":attributes",
+        "//compiler/util:ir_num",
         "//compiler/util:error",
         "//compiler/util:ir_data",
         "//compiler/util:ir_util",

@@ -110,6 +110,8 @@ class IrDataSerializer:
                     value = [self._to_dict(v, field_func) for v in value]
                 else:
                     value = self._to_dict(value, field_func)
+            elif spec.is_ir_num:
+                value = str(value)
             values[spec.name] = value
         return values
 

@@ -951,7 +951,7 @@ class NormalizeIrTest(unittest.TestCase):
         enum = ir.module[0].type[0]
         max_bits_attr = ir_util.get_attribute(enum.attribute, _MAX_BITS)
         self.assertTrue(max_bits_attr.expression.HasField("constant"))
-        self.assertEqual("64", max_bits_attr.expression.constant.value)
+        self.assertEqual(64, max_bits_attr.expression.constant.value)
 
     def test_leaves_max_bits_attribute(self):
         ir = _make_ir_from_emb("enum Foo:\n" "  [maximum_bits: 32]\n" "  ZERO = 0\n")
@@ -959,7 +959,7 @@ class NormalizeIrTest(unittest.TestCase):
         enum = ir.module[0].type[0]
         max_bits_attr = ir_util.get_attribute(enum.attribute, _MAX_BITS)
         self.assertTrue(max_bits_attr.expression.HasField("constant"))
-        self.assertEqual("32", max_bits_attr.expression.constant.value)
+        self.assertEqual(32, max_bits_attr.expression.constant.value)
 
     def test_rejects_too_small_max_bits(self):
         ir = _make_ir_from_emb("enum Foo:\n" "  [maximum_bits: 0]\n" "  ZERO = 0\n")

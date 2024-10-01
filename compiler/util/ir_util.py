@@ -18,6 +18,7 @@ import operator
 
 from compiler.util import ir_data
 from compiler.util import ir_data_utils
+from compiler.util import ir_num
 
 
 _FIXED_SIZE_ATTRIBUTE = "fixed_size_in_bits"
@@ -87,7 +88,7 @@ def is_constant_type(expression_type):
     """Returns True if expression_type is inhabited by a single value."""
     expression_type = ir_data_utils.reader(expression_type)
     return (
-        expression_type.integer.modulus == "infinity"
+        expression_type.integer.modulus == ir_num.INFINITY
         or expression_type.boolean.HasField("value")
         or expression_type.enumeration.HasField("value")
     )
@@ -99,20 +100,20 @@ def constant_value(expression, bindings=None):
         return None
     expression = ir_data_utils.reader(expression)
     if expression.WhichOneof("expression") == "constant":
-        return int(expression.constant.value or 0)
+        return expression.constant.value
     elif expression.WhichOneof("expression") == "constant_reference":
         # We can't look up the constant reference without the IR, but by the time
         # constant_value is called, the actual values should have been propagated to
         # the type information.
         if expression.type.WhichOneof("type") == "integer":
-            assert expression.type.integer.modulus == "infinity"
-            return int(expression.type.integer.modular_value)
+            assert expression.type.integer.modulus == ir_num.INFINITY
+            return expression.type.integer.modular_value
         elif expression.type.WhichOneof("type") == "boolean":
             assert expression.type.boolean.HasField("value")
             return expression.type.boolean.value
         elif expression.type.WhichOneof("type") == "enumeration":
             assert expression.type.enumeration.HasField("value")
-            return int(expression.type.enumeration.value)
+            return expression.type.enumeration.value
         else:
             assert False, "Unexpected expression type {}".format(
                 expression.type.WhichOneof("type")

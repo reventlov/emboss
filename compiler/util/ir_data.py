@@ -204,6 +204,11 @@ class NumericConstant(Message):
     value: Optional[ir_num.Num] = None
     source_location: Optional[Location] = None
 
+    def __setattr__(self, name, value):
+        if isinstance(value, int) and name == "value":
+            value = ir_num.Num(value)
+        super().__setattr__(name, value)
+
 
 class FunctionMapping(int, enum.Enum):
     """Enum of supported function types."""
@@ -480,6 +485,16 @@ class IntegerType(Message):
     minimum_value: Optional[ir_num.Num] = None
     maximum_value: Optional[ir_num.Num] = None
 
+    def __setattr__(self, name, value):
+        if isinstance(value, int) and name in (
+            "minimum_value",
+            "maximum_value",
+            "modular_value",
+            "modulus",
+        ):
+            value = ir_num.Num(value)
+        super().__setattr__(name, value)
+
 
 @dataclasses.dataclass
 class BooleanType(Message):
@@ -490,6 +505,11 @@ class BooleanType(Message):
 class EnumType(Message):
     name: Optional[Reference] = None
     value: Optional[ir_num.Num] = None
+
+    def __setattr__(self, name, value):
+        if isinstance(value, int) and name == "value":
+            value = ir_num.Num(value)
+        super().__setattr__(name, value)
 
 
 @dataclasses.dataclass

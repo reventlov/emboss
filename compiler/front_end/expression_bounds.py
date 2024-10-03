@@ -132,8 +132,8 @@ def _compute_constraints_of_field_reference(expression, ir):
     if expression.type.WhichOneof("type") == "integer":
         # TODO(bolms): These lines will need to change when support is added for
         # fixed-point types.
-        expression.type.integer.modulus = ir_num.Num(1)
-        expression.type.integer.modular_value = ir_num.Num(0)
+        expression.type.integer.modulus = 1
+        expression.type.integer.modular_value = 0
         type_definition = ir_util.find_parent_object(field_path, ir)
         if isinstance(field, ir_data.Field):
             referrent_type = field.type
@@ -181,14 +181,14 @@ def _set_integer_constraints_from_physical_type(expression, physical_type, type_
         return
     name = tuple(physical_type.atomic_type.reference.canonical_name.object_path)
     if name == ("UInt",):
-        expression.type.integer.minimum_value = ir_num.Num(0)
-        expression.type.integer.maximum_value = ir_num.Num(2**type_size - 1)
+        expression.type.integer.minimum_value = 0
+        expression.type.integer.maximum_value = 2**type_size - 1
     elif name == ("Int",):
-        expression.type.integer.minimum_value = ir_num.Num(-(2 ** (type_size - 1)))
-        expression.type.integer.maximum_value = ir_num.Num(2 ** (type_size - 1) - 1)
+        expression.type.integer.minimum_value = -(2 ** (type_size - 1))
+        expression.type.integer.maximum_value = 2 ** (type_size - 1) - 1
     elif name == ("Bcd",):
-        expression.type.integer.minimum_value = ir_num.Num(0)
-        expression.type.integer.maximum_value = ir_num.Num(
+        expression.type.integer.minimum_value = 0
+        expression.type.integer.maximum_value = (
             10 ** (type_size // 4) * 2 ** (type_size % 4) - 1
         )
     else:
@@ -207,9 +207,9 @@ def _compute_constraints_of_builtin_value(expression):
     """Computes the constraints of a builtin (like $static_size_in_bits)."""
     name = expression.builtin_reference.canonical_name.object_path[0]
     if name == "$static_size_in_bits":
-        expression.type.integer.modulus = ir_num.Num(1)
-        expression.type.integer.modular_value = ir_num.Num(0)
-        expression.type.integer.minimum_value = ir_num.Num(0)
+        expression.type.integer.modulus = 1
+        expression.type.integer.modular_value = 0
+        expression.type.integer.minimum_value = 0
         # The maximum theoretically-supported size of something is 2**64 bytes,
         # which is 2**64 * 8 bits.
         #
@@ -470,11 +470,11 @@ def _compute_constraints_of_maximum_function(expression):
     # The minimum value of the result occurs when every argument takes its minimum
     # value, which means that the minimum result is the maximum-of-minimums.
     expression.type.integer.minimum_value = max(
-        [arg.type.integer.minimum_value for arg in args]
+        arg.type.integer.minimum_value for arg in args
     )
     # The maximum result is the maximum-of-maximums.
     expression.type.integer.maximum_value = max(
-        [arg.type.integer.maximum_value for arg in args]
+        arg.type.integer.maximum_value for arg in args
     )
     # If the expression is dominated by a constant factor, then the result is
     # constant.

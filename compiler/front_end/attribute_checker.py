@@ -118,15 +118,15 @@ def _construct_integer_attribute(name, value, source_location):
     attr_value = ir_data.AttributeValue(
         expression=ir_data.Expression(
             constant=ir_data.NumericConstant(
-                value=ir_num.Num(value),
+                value=value,
                 source_location=source_location,
             ),
             type=ir_data.ExpressionType(
                 integer=ir_data.IntegerType(
-                    modular_value=ir_num.Num(value),
+                    modular_value=value,
                     modulus=ir_num.INFINITY,
-                    minimum_value=ir_num.Num(value),
-                    maximum_value=ir_num.Num(value),
+                    minimum_value=value,
+                    maximum_value=value,
                 )
             ),
             source_location=source_location,

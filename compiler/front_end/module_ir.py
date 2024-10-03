@@ -727,7 +727,7 @@ def _negation_expression_with_operator(operator, expression):
             args=[
                 ir_data.Expression(
                     constant=ir_data.NumericConstant(
-                        value=ir_num.Num(0),
+                        value=0,
                         source_location=phantom_zero_location,
                     ),
                     source_location=phantom_zero_location,
@@ -845,7 +845,7 @@ def _numeric_constant(number):
         n = int(number.text.replace("_", "")[2:], 16)
     else:
         n = int(number.text.replace("_", ""), 10)
-    return ir_data.NumericConstant(value=ir_num.Num(n))
+    return ir_data.NumericConstant(value=n)
 
 
 @_handles("type-definition -> struct")

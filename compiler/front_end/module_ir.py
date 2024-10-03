@@ -727,8 +727,7 @@ def _negation_expression_with_operator(operator, expression):
             args=[
                 ir_data.Expression(
                     constant=ir_data.NumericConstant(
-                        value=0,
-                        source_location=phantom_zero_location,
+                        value=0, source_location=phantom_zero_location
                     ),
                     source_location=phantom_zero_location,
                 ),

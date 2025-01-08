@@ -13,11 +13,11 @@ construct the final output — at the time of writing, C++ source code:
 ```mermaid
 %%{init: {"flowchart": {"htmlLabels": false}} }%%
 graph LR;
-    diskstart@{ shape: doc, label: "`<code>example.emb</code>`" }
+    diskstart@{ shape: doc, label: "<code>example.emb</code>" }
     parser["`Parser`"]
-    processing@{ shape: procs, label: "`IR processing`" }
+    processing@{ shape: procs, label: "IR processing" }
     backend["`C++ Back End`"]
-    diskend@{ shape: doc, label: "`<code>example.emb.h</code>`" }
+    diskend@{ shape: doc, label: "<code>example.emb.h</code>" }
     diskstart-- "`.emb`" -->parser
     parser-- IR -->processing
     processing-- IR -->backend

@@ -69,7 +69,7 @@ very short `.emb` file.  For example, this line:
   0  [+4]   UInt        file_state
 ```
 
-turns into this IR immediately after parsing:
+turns into this IR (in JSON serialization) immediately after parsing:
 
 ```json
 {
@@ -123,7 +123,7 @@ turns into this IR immediately after parsing:
 }
 ```
 
-In graphical form, this is:
+In graphical form (with `source_location` nodes omitted for clarity):
 
 ```mermaid
 graph TD
@@ -161,12 +161,33 @@ graph TD
 ```
 
 This initial IR then goes through a series of *elaborations*, which annotate
-the IR, and *validations*, which check various properties of the IR.  In many
-cases, elaborations and validations are mixed together — for example, in the
-symbol resolution stage, names in the IR (`field`) are *elaborated* with the
-absolute symbol to which they resolve (`module.Type.field`), and, at the same
-time, the symbol resolver *validates* that every name resolves to exactly one
-absolute symbol.  At the end of this process, the IR is much larger:
+the IR, and *validations*, which check various properties of the IR.  These are implemented as *stages* in the compiler:
+
+```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}} }%%
+graph LR
+    diskstart@{ shape: doc, label: "example.emb" }
+    parser["Parser"]
+    stage1@{ shape: proc, label: "Stage 1" }
+    stage2@{ shape: proc, label: "Stage 2" }
+    stagenm1@{ shape: proc, label: "Stage N-1" }
+    stagen@{ shape: proc, label: "Stage N" }
+    backend["C++ Code Generator"]
+    diskend@{ shape: doc, label: "example.emb.h" }
+    diskstart-->parser
+    parser-->stage1
+    stage1-->stage2
+    stage2-.->stagenm1
+    stagenm1-->stagen
+    stagen-->backend
+    backend-->diskend
+```
+
+In many cases, elaborations and validations are mixed together — for example,
+in the symbol resolution stage, names in the IR (`field`) are *elaborated* with
+the absolute symbol to which they resolve (`module.Type.field`), and, at the
+same time, the symbol resolver *validates* that every name resolves to exactly
+one absolute symbol.  At the end of this process, the IR is much larger:
 
 ```mermaid
 graph TD
@@ -266,19 +287,52 @@ graph TD
 ```
 
 
+### Front End vs Back End(s)
+
+The Emboss compiler is divided into a front end, which does most of the work,
+and back ends, which do language-specific validations and translate the final
+IR to the final output format.  Currently, only a C++ back end exists.
+
+The compiler is structured so that the front end and back end can run as
+separate programs, and when building with Bazel they do run separately.  For
+efficiency, the [`embossc`][embossc_source] driver just imports the front end
+and C++ back end directly, so that it can skip the JSON serialization and
+deserialization steps.
+
+[embossc_source]: ../embossc
+
+The front end consists of (as of the time of writing) 14 "passes":
+
+1.  Tokenization
+2.  Parse Tree Generation
+3.  Parse Tree → IR
+4.  Desugaring + Built-In Field Synthesis
+5.  Symbol Resolution Part 1: Head Symbols
+6.  Dependency Cycle Checking
+7.  Dependency Order Computation
+8.  Symbol Resolution Part 2: Field Access
+9.  Type Annotation
+10. Type Checking
+11. Bounds Computation
+12. Front End Attribute Normalization + Verification
+13. Miscellaneous Constraint Checking
+14. Inferred Write Method Generation
+
+Each of these passes will be explained in more detail later in this document.
+
+The C++ back end is much simpler, with only 2 passes:
+
+1. Back-End Attribute Normalization + Verification
+2. C++ Header Generation
 
 
 
-The back ends read the IR and emit code to view and manipulate Emboss-defined
-data structures.  Currently, only a C++ back end exists.
-
-Implementation note: for efficiency, the standalone [`embossc`][embossc_source] driver just imports the front end and C++ back end directly
 
 ## Front End
 
 *Implemented in [compiler/front_end/...][front_end]*
 
-[front_end]: compiler/front_end/
+[front_end]: ../compiler/front_end/
 
 The front end is responsible for reading in Emboss definitions and producing a
 normalized intermediate representation (IR).  It is divided into several steps:

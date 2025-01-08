@@ -225,41 +225,41 @@ graph TD
     n62@{ shape: diamond, label: "foreign_import" }
     n62 --> l32
     n62 --> l33
-    l0@{ shape: box, label: "name: byte_order" }
-    l1@{ shape: box, label: "string_constant: LittleEndian" }
-    l2@{ shape: box, label: "is_default: True" }
-    l3@{ shape: box, label: "name: namespace" }
-    l4@{ shape: box, label: "string_constant: emboss::test" }
-    l5@{ shape: box, label: "is_default: False" }
-    l6@{ shape: box, label: "back_end: cpp" }
-    l7@{ shape: box, label: "constant: 0" }
-    l8@{ shape: box, label: "constant: 4" }
-    l9@{ shape: box, label: "text: UInt" }
-    l10@{ shape: box, label: "name: file_state" }
-    l11@{ shape: box, label: "boolean_constant: True" }
-    l12@{ shape: box, label: "constant: 4" }
-    l13@{ shape: box, label: "constant: 12" }
-    l14@{ shape: box, label: "text: UInt" }
-    l15@{ shape: box, label: "constant: 8" }
-    l16@{ shape: box, label: "constant: 12" }
-    l17@{ shape: box, label: "name: file_name" }
-    l18@{ shape: box, label: "boolean_constant: True" }
-    l19@{ shape: box, label: "constant: 16" }
-    l20@{ shape: box, label: "constant: 4" }
-    l21@{ shape: box, label: "text: UInt" }
-    l22@{ shape: box, label: "name: file_size_kb" }
-    l23@{ shape: box, label: "boolean_constant: True" }
-    l24@{ shape: box, label: "constant: 20" }
-    l25@{ shape: box, label: "constant: 4" }
-    l26@{ shape: box, label: "text: UInt" }
-    l27@{ shape: box, label: "name: media" }
-    l28@{ shape: box, label: "boolean_constant: True" }
-    l29@{ shape: box, label: "addressable_unit: 8" }
-    l30@{ shape: box, label: "name: LogFileStatus" }
-    l31@{ shape: box, label: "text: This is a simple, re" }
-    l32@{ shape: box, label: "file_name: " }
-    l33@{ shape: box, label: "local_name: " }
-    l34@{ shape: box, label: "source_text: # Copyright 2019 Goo" }
+    l0@{ shape: rect, label: "name: byte_order" }
+    l1@{ shape: rect, label: "string_constant: LittleEndian" }
+    l2@{ shape: rect, label: "is_default: True" }
+    l3@{ shape: rect, label: "name: namespace" }
+    l4@{ shape: rect, label: "string_constant: emboss::test" }
+    l5@{ shape: rect, label: "is_default: False" }
+    l6@{ shape: rect, label: "back_end: cpp" }
+    l7@{ shape: rect, label: "constant: 0" }
+    l8@{ shape: rect, label: "constant: 4" }
+    l9@{ shape: rect, label: "text: UInt" }
+    l10@{ shape: rect, label: "name: file_state" }
+    l11@{ shape: rect, label: "boolean_constant: True" }
+    l12@{ shape: rect, label: "constant: 4" }
+    l13@{ shape: rect, label: "constant: 12" }
+    l14@{ shape: rect, label: "text: UInt" }
+    l15@{ shape: rect, label: "constant: 8" }
+    l16@{ shape: rect, label: "constant: 12" }
+    l17@{ shape: rect, label: "name: file_name" }
+    l18@{ shape: rect, label: "boolean_constant: True" }
+    l19@{ shape: rect, label: "constant: 16" }
+    l20@{ shape: rect, label: "constant: 4" }
+    l21@{ shape: rect, label: "text: UInt" }
+    l22@{ shape: rect, label: "name: file_size_kb" }
+    l23@{ shape: rect, label: "boolean_constant: True" }
+    l24@{ shape: rect, label: "constant: 20" }
+    l25@{ shape: rect, label: "constant: 4" }
+    l26@{ shape: rect, label: "text: UInt" }
+    l27@{ shape: rect, label: "name: media" }
+    l28@{ shape: rect, label: "boolean_constant: True" }
+    l29@{ shape: rect, label: "addressable_unit: 8" }
+    l30@{ shape: rect, label: "name: LogFileStatus" }
+    l31@{ shape: rect, label: "text: This is a simple, re" }
+    l32@{ shape: rect, label: "file_name: " }
+    l33@{ shape: rect, label: "local_name: " }
+    l34@{ shape: rect, label: "source_text: # Copyright 2019 Goo" }
 ```
 
 

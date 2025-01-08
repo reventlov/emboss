@@ -64,7 +64,7 @@ The first stage of the compiler — the parser — generates an "initial" IR, wh
 only contains information that is directly available in the source tree:
 
 ```mermaid
-digraph TD:
+graph TD:
   n0@{ shape=diamond, label="module" }
   n0 --> n1
   n0 --> n6

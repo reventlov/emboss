@@ -3,27 +3,44 @@
 This document describes the internals of Emboss.  End users do not need to read
 this document.
 
-*TODO(bolms): Update this doc to include the newer passes.*
+## Overall Design
+
+The Emboss compiler follows a reasonably standard compiler design, where the
+input source text is first converted to an "intermediate representation" (IR),
+various operations are performed on the IR, and then the IR is used to
+construct the final output — at the time of writing, C++ source code:
+
+```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}} }%%
+graph LR;
+    diskstart@{ shape: doc, label: "`<code>example.emb</code>`" }
+    parser["`Parser`"]
+    processing@{ shape: procs, label: "`IR processing`" }
+    backend["`C++ Back End`"]
+    diskend@{ shape: doc, label: "`<code>example.emb.h</code>`" }
+    diskstart-- "`.emb`" -->parser
+    parser-- IR -->processing
+    processing-- IR -->backend
+    backend-- "C++" -->diskend
+```
 
 The Emboss compiler is divided into separate "front end" and "back end"
 programs.  The front end parses Emboss files (`.emb` files) and produces a
-stable intermediate representation (IR), which is consumed by the back ends.
-This IR is defined in [public/ir_data.py][ir_pb2_py].
+(somewhat) stable intermediate representation (IR), which is consumed by the
+back ends.  This IR is defined in [compiler/util/ir_data.py][ir_data_py].
 
-[ir_pb2_py]: public/ir_data.py
+[ir_data_py]: ../compiler/util/ir_data.py
 
 The back ends read the IR and emit code to view and manipulate Emboss-defined
-data structures.  Currently, only a C++ back-end exists.
+data structures.  Currently, only a C++ back end exists.
 
-*TODO(bolms): Split the symbol resolution and validation steps in a separate
-"middle" component, to allow external code generators to generate undecorated
-Emboss IR instead of Emboss source text?*
+Implementation note: for efficiency, the standalone [`embossc`][embossc_source] driver just imports the front end and C++ back end directly
 
 ## Front End
 
-*Implemented in [front_end/...][front_end]*
+*Implemented in [compiler/front_end/...][front_end]*
 
-[front_end]: front_end/
+[front_end]: compiler/front_end/
 
 The front end is responsible for reading in Emboss definitions and producing a
 normalized intermediate representation (IR).  It is divided into several steps:

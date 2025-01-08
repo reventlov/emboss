@@ -11,14 +11,14 @@ various operations are performed on the IR, and then the IR is used to
 construct the final output — at the time of writing, C++ source code:
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}} }%%
+%%{init: {"flowchart": {"htmlLabels": true}} }%%
 graph LR;
     diskstart@{ shape: doc, label: "<code>example.emb</code>" }
-    parser["`Parser`"]
+    parser["Parser"]
     processing@{ shape: procs, label: "IR processing" }
-    backend["`C++ Back End`"]
+    backend["C++ Back End"]
     diskend@{ shape: doc, label: "<code>example.emb.h</code>" }
-    diskstart-- "`.emb`" -->parser
+    diskstart-- ".emb" -->parser
     parser-- IR -->processing
     processing-- IR -->backend
     backend-- "C++" -->diskend

@@ -63,223 +63,101 @@ in [compiler/util/ir_data.py][ir_data_py].
 The first stage of the compiler — the parser — generates an "initial" IR, which
 only contains information that is directly available in the source tree.  Even
 without any further information, the initial IR can be quite large even for a
-very short `.emb` file.  For example, this `.emb`:
+very short `.emb` file.  For example, this line:
 
 ```emb
-# Copyright 2019 Google LLC
-
--- This is a simple, real-world example structure.
-
-[$default byte_order: "LittleEndian"]
-[(cpp) namespace: "emboss::test"]
-
-
-struct LogFileStatus:
   0  [+4]   UInt        file_state
-  4  [+12]  UInt:8[12]  file_name
-  16 [+4]   UInt        file_size_kb
-  20 [+4]   UInt        media
 ```
 
 turns into this IR immediately after parsing:
 
+```json
+{
+  "location": {
+    "start": {
+      "constant": {
+        "value": "0",
+        "source_location": "22:3-22:4"
+      },
+      "source_location": "22:3-22:4"
+    },
+    "size": {
+      "constant": {
+        "value": "4",
+        "source_location": "22:8-22:9"
+      },
+      "source_location": "22:8-22:9"
+    },
+    "source_location": "22:3-22:10"
+  },
+  "type": {
+    "atomic_type": {
+      "reference": {
+        "source_name": [
+          {
+            "text": "UInt",
+            "source_location": "22:13-22:17"
+          }
+        ],
+        "source_location": "22:13-22:17"
+      },
+      "source_location": "22:13-22:17"
+    },
+    "source_location": "22:13-22:17"
+  },
+  "name": {
+    "name": {
+      "text": "file_state",
+      "source_location": "22:25-22:35"
+    },
+    "source_location": "22:25-22:35"
+  },
+  "existence_condition": {
+    "boolean_constant": {
+      "value": true,
+      "source_location": "22:3-22:35"
+    },
+    "source_location": "22:3-22:35"
+  },
+  "source_location": "22:3-22:35"
+}
+```
+
+In graphical form, this is:
+
 ```mermaid
 graph TD
     n0@{ shape: diamond, label: "module" }
-    n1@{ shape: diamond, label: "attributes" }
     n0 --> n1
-    n0 --> n6
-    n0 --> n59
-    n0 --> n61
-    n0 --> l34
+    n0 --> n4
+    n0 --> n9
+    n0 --> n10
+    n1@{ shape: diamond, label: "location" }
     n1 --> n2
-    n1 --> n4
-    n2@{ shape: diamond, label: "attribute" }
+    n1 --> n3
+    n2@{ shape: diamond, label: "start" }
     n2 --> l0
-    n2 --> n3
-    n2 --> l2
-    n3@{ shape: diamond, label: "value" }
+    n3@{ shape: diamond, label: "size" }
     n3 --> l1
-    n4@{ shape: diamond, label: "attribute" }
-    n4 --> l3
+    n4@{ shape: diamond, label: "type" }
     n4 --> n5
-    n4 --> l5
-    n4 --> l6
-    n5@{ shape: diamond, label: "value" }
-    n5 --> l4
-    n6@{ shape: diamond, label: "types" }
+    n5@{ shape: diamond, label: "atomic_type" }
+    n5 --> n6
+    n6@{ shape: diamond, label: "reference" }
     n6 --> n7
-    n7@{ shape: diamond, label: "type" }
+    n7@{ shape: diamond, label: "source_names" }
     n7 --> n8
-    n7 --> l29
-    n7 --> n58
-    n8@{ shape: diamond, label: "structure" }
-    n8 --> n9
-    n9@{ shape: diamond, label: "fields" }
-    n9 --> n10
-    n9 --> n21
-    n9 --> n36
-    n9 --> n47
-    n10@{ shape: diamond, label: "field" }
-    n10 --> n11
-    n10 --> n14
-    n10 --> n19
-    n10 --> n20
-    n11@{ shape: diamond, label: "location" }
-    n11 --> n12
-    n11 --> n13
-    n12@{ shape: diamond, label: "start" }
-    n12 --> l7
-    n13@{ shape: diamond, label: "size" }
-    n13 --> l8
-    n14@{ shape: diamond, label: "type" }
-    n14 --> n15
-    n15@{ shape: diamond, label: "atomic_type" }
-    n15 --> n16
-    n16@{ shape: diamond, label: "reference" }
-    n16 --> n17
-    n17@{ shape: diamond, label: "source_names" }
-    n17 --> n18
-    n18@{ shape: diamond, label: "source_name" }
-    n18 --> l9
-    n19@{ shape: diamond, label: "name" }
-    n19 --> l10
-    n20@{ shape: diamond, label: "existence_condition" }
-    n20 --> l11
-    n21@{ shape: diamond, label: "field" }
-    n21 --> n22
-    n21 --> n25
-    n21 --> n34
-    n21 --> n35
-    n22@{ shape: diamond, label: "location" }
-    n22 --> n23
-    n22 --> n24
-    n23@{ shape: diamond, label: "start" }
-    n23 --> l12
-    n24@{ shape: diamond, label: "size" }
-    n24 --> l13
-    n25@{ shape: diamond, label: "type" }
-    n25 --> n26
-    n26@{ shape: diamond, label: "array_type" }
-    n26 --> n27
-    n26 --> n33
-    n27@{ shape: diamond, label: "base_type" }
-    n27 --> n28
-    n27 --> n32
-    n28@{ shape: diamond, label: "atomic_type" }
-    n28 --> n29
-    n29@{ shape: diamond, label: "reference" }
-    n29 --> n30
-    n30@{ shape: diamond, label: "source_names" }
-    n30 --> n31
-    n31@{ shape: diamond, label: "source_name" }
-    n31 --> l14
-    n32@{ shape: diamond, label: "size_in_bits" }
-    n32 --> l15
-    n33@{ shape: diamond, label: "element_count" }
-    n33 --> l16
-    n34@{ shape: diamond, label: "name" }
-    n34 --> l17
-    n35@{ shape: diamond, label: "existence_condition" }
-    n35 --> l18
-    n36@{ shape: diamond, label: "field" }
-    n36 --> n37
-    n36 --> n40
-    n36 --> n45
-    n36 --> n46
-    n37@{ shape: diamond, label: "location" }
-    n37 --> n38
-    n37 --> n39
-    n38@{ shape: diamond, label: "start" }
-    n38 --> l19
-    n39@{ shape: diamond, label: "size" }
-    n39 --> l20
-    n40@{ shape: diamond, label: "type" }
-    n40 --> n41
-    n41@{ shape: diamond, label: "atomic_type" }
-    n41 --> n42
-    n42@{ shape: diamond, label: "reference" }
-    n42 --> n43
-    n43@{ shape: diamond, label: "source_names" }
-    n43 --> n44
-    n44@{ shape: diamond, label: "source_name" }
-    n44 --> l21
-    n45@{ shape: diamond, label: "name" }
-    n45 --> l22
-    n46@{ shape: diamond, label: "existence_condition" }
-    n46 --> l23
-    n47@{ shape: diamond, label: "field" }
-    n47 --> n48
-    n47 --> n51
-    n47 --> n56
-    n47 --> n57
-    n48@{ shape: diamond, label: "location" }
-    n48 --> n49
-    n48 --> n50
-    n49@{ shape: diamond, label: "start" }
-    n49 --> l24
-    n50@{ shape: diamond, label: "size" }
-    n50 --> l25
-    n51@{ shape: diamond, label: "type" }
-    n51 --> n52
-    n52@{ shape: diamond, label: "atomic_type" }
-    n52 --> n53
-    n53@{ shape: diamond, label: "reference" }
-    n53 --> n54
-    n54@{ shape: diamond, label: "source_names" }
-    n54 --> n55
-    n55@{ shape: diamond, label: "source_name" }
-    n55 --> l26
-    n56@{ shape: diamond, label: "name" }
-    n56 --> l27
-    n57@{ shape: diamond, label: "existence_condition" }
-    n57 --> l28
-    n58@{ shape: diamond, label: "name" }
-    n58 --> l30
-    n59@{ shape: diamond, label: "documentations" }
-    n59 --> n60
-    n60@{ shape: diamond, label: "documentation" }
-    n60 --> l31
-    n61@{ shape: diamond, label: "foreign_imports" }
-    n61 --> n62
-    n62@{ shape: diamond, label: "foreign_import" }
-    n62 --> l32
-    n62 --> l33
-    l0@{ shape: rect, label: "name: byte_order" }
-    l1@{ shape: rect, label: "string_constant: LittleEndian" }
-    l2@{ shape: rect, label: "is_default: True" }
-    l3@{ shape: rect, label: "name: namespace" }
-    l4@{ shape: rect, label: "string_constant: emboss::test" }
-    l5@{ shape: rect, label: "is_default: False" }
-    l6@{ shape: rect, label: "back_end: cpp" }
-    l7@{ shape: rect, label: "constant: 0" }
-    l8@{ shape: rect, label: "constant: 4" }
-    l9@{ shape: rect, label: "text: UInt" }
-    l10@{ shape: rect, label: "name: file_state" }
-    l11@{ shape: rect, label: "boolean_constant: True" }
-    l12@{ shape: rect, label: "constant: 4" }
-    l13@{ shape: rect, label: "constant: 12" }
-    l14@{ shape: rect, label: "text: UInt" }
-    l15@{ shape: rect, label: "constant: 8" }
-    l16@{ shape: rect, label: "constant: 12" }
-    l17@{ shape: rect, label: "name: file_name" }
-    l18@{ shape: rect, label: "boolean_constant: True" }
-    l19@{ shape: rect, label: "constant: 16" }
-    l20@{ shape: rect, label: "constant: 4" }
-    l21@{ shape: rect, label: "text: UInt" }
-    l22@{ shape: rect, label: "name: file_size_kb" }
-    l23@{ shape: rect, label: "boolean_constant: True" }
-    l24@{ shape: rect, label: "constant: 20" }
-    l25@{ shape: rect, label: "constant: 4" }
-    l26@{ shape: rect, label: "text: UInt" }
-    l27@{ shape: rect, label: "name: media" }
-    l28@{ shape: rect, label: "boolean_constant: True" }
-    l29@{ shape: rect, label: "addressable_unit: 8" }
-    l30@{ shape: rect, label: "name: LogFileStatus" }
-    l31@{ shape: rect, label: "text: This is a simple, re" }
-    l32@{ shape: rect, label: "file_name: " }
-    l33@{ shape: rect, label: "local_name: " }
-    l34@{ shape: rect, label: "source_text: # Copyright 2019 Goo" }
+    n8@{ shape: diamond, label: "source_name" }
+    n8 --> l2
+    n9@{ shape: diamond, label: "name" }
+    n9 --> l3
+    n10@{ shape: diamond, label: "existence_condition" }
+    n10 --> l4
+    l0@{ shape: rect, label: "constant: 0" }
+    l1@{ shape: rect, label: "constant: 4" }
+    l2@{ shape: rect, label: "text: UInt" }
+    l3@{ shape: rect, label: "name: file_state" }
+    l4@{ shape: rect, label: "boolean_constant: True" }
 ```
 
 This initial IR then goes through a series of *elaborations*, which annotate
@@ -288,14 +166,7 @@ cases, elaborations and validations are mixed together — for example, in the
 symbol resolution stage, names in the IR (`field`) are *elaborated* with the
 absolute symbol to which they resolve (`module.Type.field`), and, at the same
 time, the symbol resolver *validates* that every name resolves to exactly one
-absolute symbol.  At the end of this process, the IR is much larger — so large,
-in fact, that GitHub will not render it.  The final IR for just the first field:
-
-```emb
-  0  [+4]   UInt        file_state
-```
-
-ends up:
+absolute symbol.  At the end of this process, the IR is much larger:
 
 ```mermaid
 graph TD

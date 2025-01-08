@@ -225,6 +225,9 @@ graph TD;
   n62@{ shape=diamond, label="foreign_import" }
   n62 --> l32
   n62 --> l33
+```
+
+```
   l0@{ shape=box, label="name: byte_order" }
   l1@{ shape=box, label="string_constant: LittleEndian" }
   l2@{ shape=box, label="is_default: True" }

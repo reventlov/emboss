@@ -65,204 +65,201 @@ only contains information that is directly available in the source tree:
 
 ```mermaid
 graph TD
-    n0@{ shape=diamond, label="module" }
+    n0@{ shape: diamond, label: "module" }
+    n1@{ shape: diamond, label: "attributes" }
     n0 --> n1
     n0 --> n6
     n0 --> n59
     n0 --> n61
     n0 --> l34
-    n1@{ shape=diamond, label="attributes" }
     n1 --> n2
     n1 --> n4
-    n2@{ shape=diamond, label="attribute" }
+    n2@{ shape: diamond, label: "attribute" }
     n2 --> l0
     n2 --> n3
     n2 --> l2
-    n3@{ shape=diamond, label="value" }
+    n3@{ shape: diamond, label: "value" }
     n3 --> l1
-    n4@{ shape=diamond, label="attribute" }
+    n4@{ shape: diamond, label: "attribute" }
     n4 --> l3
     n4 --> n5
     n4 --> l5
     n4 --> l6
-    n5@{ shape=diamond, label="value" }
+    n5@{ shape: diamond, label: "value" }
     n5 --> l4
-    n6@{ shape=diamond, label="types" }
+    n6@{ shape: diamond, label: "types" }
     n6 --> n7
-    n7@{ shape=diamond, label="type" }
+    n7@{ shape: diamond, label: "type" }
     n7 --> n8
     n7 --> l29
     n7 --> n58
-    n8@{ shape=diamond, label="structure" }
+    n8@{ shape: diamond, label: "structure" }
     n8 --> n9
-    n9@{ shape=diamond, label="fields" }
+    n9@{ shape: diamond, label: "fields" }
     n9 --> n10
     n9 --> n21
     n9 --> n36
     n9 --> n47
-    n10@{ shape=diamond, label="field" }
+    n10@{ shape: diamond, label: "field" }
     n10 --> n11
     n10 --> n14
     n10 --> n19
     n10 --> n20
-    n11@{ shape=diamond, label="location" }
+    n11@{ shape: diamond, label: "location" }
     n11 --> n12
     n11 --> n13
-    n12@{ shape=diamond, label="start" }
+    n12@{ shape: diamond, label: "start" }
     n12 --> l7
-    n13@{ shape=diamond, label="size" }
+    n13@{ shape: diamond, label: "size" }
     n13 --> l8
-    n14@{ shape=diamond, label="type" }
+    n14@{ shape: diamond, label: "type" }
     n14 --> n15
-    n15@{ shape=diamond, label="atomic_type" }
+    n15@{ shape: diamond, label: "atomic_type" }
     n15 --> n16
-    n16@{ shape=diamond, label="reference" }
+    n16@{ shape: diamond, label: "reference" }
     n16 --> n17
-    n17@{ shape=diamond, label="source_names" }
+    n17@{ shape: diamond, label: "source_names" }
     n17 --> n18
-    n18@{ shape=diamond, label="source_name" }
+    n18@{ shape: diamond, label: "source_name" }
     n18 --> l9
-    n19@{ shape=diamond, label="name" }
+    n19@{ shape: diamond, label: "name" }
     n19 --> l10
-    n20@{ shape=diamond, label="existence_condition" }
+    n20@{ shape: diamond, label: "existence_condition" }
     n20 --> l11
-    n21@{ shape=diamond, label="field" }
+    n21@{ shape: diamond, label: "field" }
     n21 --> n22
     n21 --> n25
     n21 --> n34
     n21 --> n35
-    n22@{ shape=diamond, label="location" }
+    n22@{ shape: diamond, label: "location" }
     n22 --> n23
     n22 --> n24
-    n23@{ shape=diamond, label="start" }
+    n23@{ shape: diamond, label: "start" }
     n23 --> l12
-    n24@{ shape=diamond, label="size" }
+    n24@{ shape: diamond, label: "size" }
     n24 --> l13
-    n25@{ shape=diamond, label="type" }
+    n25@{ shape: diamond, label: "type" }
     n25 --> n26
-    n26@{ shape=diamond, label="array_type" }
+    n26@{ shape: diamond, label: "array_type" }
     n26 --> n27
     n26 --> n33
-    n27@{ shape=diamond, label="base_type" }
+    n27@{ shape: diamond, label: "base_type" }
     n27 --> n28
     n27 --> n32
-    n28@{ shape=diamond, label="atomic_type" }
+    n28@{ shape: diamond, label: "atomic_type" }
     n28 --> n29
-    n29@{ shape=diamond, label="reference" }
+    n29@{ shape: diamond, label: "reference" }
     n29 --> n30
-    n30@{ shape=diamond, label="source_names" }
+    n30@{ shape: diamond, label: "source_names" }
     n30 --> n31
-    n31@{ shape=diamond, label="source_name" }
+    n31@{ shape: diamond, label: "source_name" }
     n31 --> l14
-    n32@{ shape=diamond, label="size_in_bits" }
+    n32@{ shape: diamond, label: "size_in_bits" }
     n32 --> l15
-    n33@{ shape=diamond, label="element_count" }
+    n33@{ shape: diamond, label: "element_count" }
     n33 --> l16
-    n34@{ shape=diamond, label="name" }
+    n34@{ shape: diamond, label: "name" }
     n34 --> l17
-    n35@{ shape=diamond, label="existence_condition" }
+    n35@{ shape: diamond, label: "existence_condition" }
     n35 --> l18
-    n36@{ shape=diamond, label="field" }
+    n36@{ shape: diamond, label: "field" }
     n36 --> n37
     n36 --> n40
     n36 --> n45
     n36 --> n46
-    n37@{ shape=diamond, label="location" }
+    n37@{ shape: diamond, label: "location" }
     n37 --> n38
     n37 --> n39
-    n38@{ shape=diamond, label="start" }
+    n38@{ shape: diamond, label: "start" }
     n38 --> l19
-    n39@{ shape=diamond, label="size" }
+    n39@{ shape: diamond, label: "size" }
     n39 --> l20
-    n40@{ shape=diamond, label="type" }
+    n40@{ shape: diamond, label: "type" }
     n40 --> n41
-    n41@{ shape=diamond, label="atomic_type" }
+    n41@{ shape: diamond, label: "atomic_type" }
     n41 --> n42
-    n42@{ shape=diamond, label="reference" }
+    n42@{ shape: diamond, label: "reference" }
     n42 --> n43
-    n43@{ shape=diamond, label="source_names" }
+    n43@{ shape: diamond, label: "source_names" }
     n43 --> n44
-    n44@{ shape=diamond, label="source_name" }
+    n44@{ shape: diamond, label: "source_name" }
     n44 --> l21
-    n45@{ shape=diamond, label="name" }
+    n45@{ shape: diamond, label: "name" }
     n45 --> l22
-    n46@{ shape=diamond, label="existence_condition" }
+    n46@{ shape: diamond, label: "existence_condition" }
     n46 --> l23
-    n47@{ shape=diamond, label="field" }
+    n47@{ shape: diamond, label: "field" }
     n47 --> n48
     n47 --> n51
     n47 --> n56
     n47 --> n57
-    n48@{ shape=diamond, label="location" }
+    n48@{ shape: diamond, label: "location" }
     n48 --> n49
     n48 --> n50
-    n49@{ shape=diamond, label="start" }
+    n49@{ shape: diamond, label: "start" }
     n49 --> l24
-    n50@{ shape=diamond, label="size" }
+    n50@{ shape: diamond, label: "size" }
     n50 --> l25
-    n51@{ shape=diamond, label="type" }
+    n51@{ shape: diamond, label: "type" }
     n51 --> n52
-    n52@{ shape=diamond, label="atomic_type" }
+    n52@{ shape: diamond, label: "atomic_type" }
     n52 --> n53
-    n53@{ shape=diamond, label="reference" }
+    n53@{ shape: diamond, label: "reference" }
     n53 --> n54
-    n54@{ shape=diamond, label="source_names" }
+    n54@{ shape: diamond, label: "source_names" }
     n54 --> n55
-    n55@{ shape=diamond, label="source_name" }
+    n55@{ shape: diamond, label: "source_name" }
     n55 --> l26
-    n56@{ shape=diamond, label="name" }
+    n56@{ shape: diamond, label: "name" }
     n56 --> l27
-    n57@{ shape=diamond, label="existence_condition" }
+    n57@{ shape: diamond, label: "existence_condition" }
     n57 --> l28
-    n58@{ shape=diamond, label="name" }
+    n58@{ shape: diamond, label: "name" }
     n58 --> l30
-    n59@{ shape=diamond, label="documentations" }
+    n59@{ shape: diamond, label: "documentations" }
     n59 --> n60
-    n60@{ shape=diamond, label="documentation" }
+    n60@{ shape: diamond, label: "documentation" }
     n60 --> l31
-    n61@{ shape=diamond, label="foreign_imports" }
+    n61@{ shape: diamond, label: "foreign_imports" }
     n61 --> n62
-    n62@{ shape=diamond, label="foreign_import" }
+    n62@{ shape: diamond, label: "foreign_import" }
     n62 --> l32
     n62 --> l33
-```
-
-```
-  l0@{ shape=box, label="name: byte_order" }
-  l1@{ shape=box, label="string_constant: LittleEndian" }
-  l2@{ shape=box, label="is_default: True" }
-  l3@{ shape=box, label="name: namespace" }
-  l4@{ shape=box, label="string_constant: emboss::test" }
-  l5@{ shape=box, label="is_default: False" }
-  l6@{ shape=box, label="back_end: cpp" }
-  l7@{ shape=box, label="constant: 0" }
-  l8@{ shape=box, label="constant: 4" }
-  l9@{ shape=box, label="text: UInt" }
-  l10@{ shape=box, label="name: file_state" }
-  l11@{ shape=box, label="boolean_constant: True" }
-  l12@{ shape=box, label="constant: 4" }
-  l13@{ shape=box, label="constant: 12" }
-  l14@{ shape=box, label="text: UInt" }
-  l15@{ shape=box, label="constant: 8" }
-  l16@{ shape=box, label="constant: 12" }
-  l17@{ shape=box, label="name: file_name" }
-  l18@{ shape=box, label="boolean_constant: True" }
-  l19@{ shape=box, label="constant: 16" }
-  l20@{ shape=box, label="constant: 4" }
-  l21@{ shape=box, label="text: UInt" }
-  l22@{ shape=box, label="name: file_size_kb" }
-  l23@{ shape=box, label="boolean_constant: True" }
-  l24@{ shape=box, label="constant: 20" }
-  l25@{ shape=box, label="constant: 4" }
-  l26@{ shape=box, label="text: UInt" }
-  l27@{ shape=box, label="name: media" }
-  l28@{ shape=box, label="boolean_constant: True" }
-  l29@{ shape=box, label="addressable_unit: 8" }
-  l30@{ shape=box, label="name: LogFileStatus" }
-  l31@{ shape=box, label="text: This is a simple, re" }
-  l32@{ shape=box, label="file_name: " }
-  l33@{ shape=box, label="local_name: " }
-  l34@{ shape=box, label="source_text: # Copyright 2019 Goo" }
+    l0@{ shape: box, label: "name: byte_order" }
+    l1@{ shape: box, label: "string_constant: LittleEndian" }
+    l2@{ shape: box, label: "is_default: True" }
+    l3@{ shape: box, label: "name: namespace" }
+    l4@{ shape: box, label: "string_constant: emboss::test" }
+    l5@{ shape: box, label: "is_default: False" }
+    l6@{ shape: box, label: "back_end: cpp" }
+    l7@{ shape: box, label: "constant: 0" }
+    l8@{ shape: box, label: "constant: 4" }
+    l9@{ shape: box, label: "text: UInt" }
+    l10@{ shape: box, label: "name: file_state" }
+    l11@{ shape: box, label: "boolean_constant: True" }
+    l12@{ shape: box, label: "constant: 4" }
+    l13@{ shape: box, label: "constant: 12" }
+    l14@{ shape: box, label: "text: UInt" }
+    l15@{ shape: box, label: "constant: 8" }
+    l16@{ shape: box, label: "constant: 12" }
+    l17@{ shape: box, label: "name: file_name" }
+    l18@{ shape: box, label: "boolean_constant: True" }
+    l19@{ shape: box, label: "constant: 16" }
+    l20@{ shape: box, label: "constant: 4" }
+    l21@{ shape: box, label: "text: UInt" }
+    l22@{ shape: box, label: "name: file_size_kb" }
+    l23@{ shape: box, label: "boolean_constant: True" }
+    l24@{ shape: box, label: "constant: 20" }
+    l25@{ shape: box, label: "constant: 4" }
+    l26@{ shape: box, label: "text: UInt" }
+    l27@{ shape: box, label: "name: media" }
+    l28@{ shape: box, label: "boolean_constant: True" }
+    l29@{ shape: box, label: "addressable_unit: 8" }
+    l30@{ shape: box, label: "name: LogFileStatus" }
+    l31@{ shape: box, label: "text: This is a simple, re" }
+    l32@{ shape: box, label: "file_name: " }
+    l33@{ shape: box, label: "local_name: " }
+    l34@{ shape: box, label: "source_text: # Copyright 2019 Goo" }
 ```
 
 

@@ -177,7 +177,7 @@ graph LR
     diskstart-->parser
     parser-->stage1
     stage1-->stage2
-    stage2-.->stagenm1
+    stage2-...->stagenm1
     stagenm1-->stagen
     stagen-->backend
     backend-->diskend
@@ -301,7 +301,7 @@ deserialization steps.
 
 [embossc_source]: ../embossc
 
-The front end consists of (as of the time of writing) 14 "passes":
+The front end consists of (as of the time of writing) 14 stages:
 
 1.  Tokenization
 2.  Parse Tree Generation
@@ -318,14 +318,63 @@ The front end consists of (as of the time of writing) 14 "passes":
 13. Miscellaneous Constraint Checking
 14. Inferred Write Method Generation
 
-Each of these passes will be explained in more detail later in this document.
+Each of these stages will be explained in more detail later in this document.
 
-The C++ back end is much simpler, with only 2 passes:
+The C++ back end is much simpler, with only 2 stages:
 
 1. Back-End Attribute Normalization + Verification
 2. C++ Header Generation
 
 
+### IR Traversal
+
+Most stages walk the IR one (or more) times, processing or checking specific
+types of nodes.  The Emboss compiler uses a special
+[`fast_traverse_ir_top_down()`][traverse_ir] function that takes a *pattern*
+and calls a handler on all nodes that match that pattern.
+`fast_traverse_ir_top_down()` has been optimized to walk trees efficiently: it
+will skip branches if no node in the branch could possibly match the pattern.
+
+[traverse_ir]: ../compiler/util/traverse_ir.py#:~:def%20fast_traverse_ir_top_down
+
+For example, this will call `print()` every `Word` in the IR:
+
+```
+fast_traverse_ir_top_down(ir, [ir_data.Word], print)
+```
+
+Or you could limit the scope to only `Word` nodes inside of `Import` nodes:
+
+```
+fast_traverse_ir_top_down(ir, [ir_data.Import, ir_data.Word], print)
+```
+
+`fast_traverse_ir_top_down()` has a lot of options.  For full usage, see
+[its documentation in the source code][traverse_ir].
+
+
+### Error Handling
+
+The general scheme for running stages is:
+
+```
+for stage in stages:
+    next_ir, errors = stage(prev_ir)
+    if errors:
+        return None, errors
+    prev_ir = next_ir
+return prev_ir, None
+```
+
+That is: run each stage, and if the stage returns any errors, stop processing
+and return the error(s).
+
+Errors are represented by lists of [messages][error_py] (`error`, `warning` or
+`note`), where, generally, the first message will be an `error` or `warning`,
+and any subsequent messages are `note` messages that provide additional
+information.
+
+[error_py]: ../compiler/util/error.py
 
 
 ## Front End
@@ -342,12 +391,71 @@ The front end is orchestrated by [glue.py][glue_py], which runs each front end
 component in the proper order to construct an IR suitable for consumption by the
 back end.
 
-[glue_py]: front_end/glue.py
+[glue_py]: ../front_end/glue.py
 
-The actual driver program is [emboss_front_end.py][emboss_front_end_py], which
-just calls `glue.ParseEmbossFile` and prints the results.
+The front end driver program is [emboss_front_end.py][emboss_front_end_py],
+which just calls `glue.ParseEmbossFile` and prints the results.
 
-[emboss_front_end_py]: front_end/emboss_front_end.py
+[emboss_front_end_py]: ../front_end/emboss_front_end.py
+
+
+### Tokenization and Parsing
+
+The first part of the front end translates the text of the `.emb` input into an
+IR structure.
+
+
+#### Tokenization
+
+The very first stage is tokenization, also called lexical analysis.
+Tokenization breaks the input text into *tokens* of one or more characters.
+For example, take the string `abc+def`:
+
+```
++---+---+---+---+---+---+---+
+| a | b | c | + | d | e | f |
++---+---+---+---+---+---+---+
+```
+
+This will be grouped into three tokens, `abc`, `+`, and `def`:
+
+```
++-----------+-----+-----------+
+| abc       | +   | def       |
+| SnakeWord | "+" | SnakeWord |
++-----------+-----+-----------+
+```
+
+In addition, each token is labeled with a category, such as `Documentation`,
+`Number`, or `"*"`: by convention, tokens that are always a specific sequence
+of characters are given a label that is just the token in double quotes, such
+as `"+"` for `+`, `"=="` for `==`, `"if"` for `if`, and so on.
+
+These category labels match names in the grammar in the next step...
+
+
+#### Parse Tree Generation
+
+The list of tokens is then passed to a [shift-reduce (also known as "LR(1)")
+parser][shift_reduce], which produces a parse tree.
+
+
+
+1.  Tokenization
+2.  Parse Tree Generation
+3.  Parse Tree → IR
+4.  Desugaring + Built-In Field Synthesis
+5.  Symbol Resolution Part 1: Head Symbols
+6.  Dependency Cycle Checking
+7.  Dependency Order Computation
+8.  Symbol Resolution Part 2: Field Access
+9.  Type Annotation
+10. Type Checking
+11. Bounds Computation
+12. Front End Attribute Normalization + Verification
+13. Miscellaneous Constraint Checking
+14. Inferred Write Method Generation
+
 
 ### File Parsing
 

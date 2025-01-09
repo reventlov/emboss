@@ -170,6 +170,7 @@ graph LR
     parser["Parser"]
     stage1@{ shape: proc, label: "Stage 1" }
     stage2@{ shape: proc, label: "Stage 2" }
+    stages@{ shape: proc, label: "..." }
     stagenm1@{ shape: proc, label: "Stage N-1" }
     stagen@{ shape: proc, label: "Stage N" }
     backend["C++ Code Generator"]
@@ -177,7 +178,8 @@ graph LR
     diskstart-->parser
     parser-->stage1
     stage1-->stage2
-    stage2-- "..." ---->stagenm1
+    stage2---->stages
+    stages---->stagenm1
     stagenm1-->stagen
     stagen-->backend
     backend-->diskend

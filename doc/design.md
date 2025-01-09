@@ -171,7 +171,7 @@ graph LR
     stage1@{ shape: proc, label: "Stage 1" }
     stage2@{ shape: proc, label: "Stage 2" }
     stages@{ shape: proc, label: "..." }
-    stagenm1@{ shape: proc, label: "Stage N-1" }
+    stagenm1@{ shape: procs, label: "Stage N-1" }
     stagen@{ shape: proc, label: "Stage N" }
     backend["C++ Code Generator"]
     diskend@{ shape: doc, label: "example.emb.h" }

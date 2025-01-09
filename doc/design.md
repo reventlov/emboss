@@ -127,7 +127,7 @@ In graphical form (with `source_location` nodes omitted for clarity):
 
 ```mermaid
 graph TD
-    n0@{ shape: diamond, label: "module" }
+    n0@{ shape: diamond, label: "field" }
     n0 --> n1
     n0 --> n4
     n0 --> n9
@@ -177,7 +177,7 @@ graph LR
     diskstart-->parser
     parser-->stage1
     stage1-->stage2
-    stage2-...->stagenm1
+    stage2- "..." ->stagenm1
     stagenm1-->stagen
     stagen-->backend
     backend-->diskend
@@ -191,7 +191,7 @@ one absolute symbol.  At the end of this process, the IR is much larger:
 
 ```mermaid
 graph TD
-    n0@{ shape: diamond, label: "module" }
+    n0@{ shape: diamond, label: "field" }
     n0 --> n1
     n0 --> n8
     n0 --> n15

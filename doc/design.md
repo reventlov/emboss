@@ -178,8 +178,8 @@ graph LR
     diskstart-->parser
     parser-->stage1
     stage1-->stage2
-    stage2---->stages
-    stages---->stagenm1
+    stage2-->stages
+    stages-->stagenm1
     stagenm1-->stagen
     stagen-->backend
     backend-->diskend

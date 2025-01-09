@@ -170,7 +170,7 @@ graph LR
     parser["Parser"]
     stage1@{ shape: proc, label: "Stage 1" }
     stage2@{ shape: proc, label: "Stage 2" }
-    stages@{ shape: procs, label: "..." }
+    stages@{ shape: text, label: "..." }
     stagenm1@{ shape: proc, label: "Stage N-1" }
     stagen@{ shape: proc, label: "Stage N" }
     backend["C++ Code Generator"]

@@ -533,6 +533,7 @@ graph TD
     r19 --> t6
     r19 --> r20
     subgraph tokens
+        direction LR
         t0 ~~~ t1 ~~~ t2 ~~~ t3 ~~~ t4 ~~~ t5 ~~~ t6 ~~~ t7
         t0@{shape: rect, label: "struct"}
         t1@{shape: rect, label: "Foo"}

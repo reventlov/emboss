@@ -530,7 +530,6 @@ graph TD
     r23@{shape: diamond, label: "type-definition*"}
     r24@{shape: diamond, label: "struct-field-block"}
     r25@{shape: diamond, label: "type-definition*"}
-  subgraph tokens
     t0 ~~~ t1 ~~~ t2 ~~~ t3 ~~~ t4 ~~~ t5 ~~~ t6 ~~~ t7
     t0@{shape: rect, label: "struct"}
     t1@{shape: rect, label: "Foo"}
@@ -540,7 +539,6 @@ graph TD
     t5@{shape: rect, label: "-- word"}
     t6@{shape: rect, label: "\\n"}
     t7@{shape: rect, label: "Dedent"}
-  end
 ```
 
 

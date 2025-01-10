@@ -543,6 +543,7 @@ graph TD
         t6@{shape: rect, label: "\\n"}
         t7@{shape: rect, label: "Dedent"}
     end
+    reductions ~~ tokens
 ```
 
 

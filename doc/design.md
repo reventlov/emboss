@@ -500,6 +500,17 @@ graph TD
         r24@{shape: diamond, label: "struct-field-block"}
         r25@{shape: diamond, label: "type-definition*"}
     end
+    subgraph tokens
+        direction LR
+        t0@{shape: rect, label: "struct"}
+        t1@{shape: rect, label: "Foo"}
+        t2@{shape: rect, label: ":"}
+        t3@{shape: rect, label: "\\n"}
+        t4@{shape: rect, label: "Indent"}
+        t5@{shape: rect, label: "-- word"}
+        t6@{shape: rect, label: "\\n"}
+        t7@{shape: rect, label: "Dedent"}
+    end
     r0 --> r1
     r0 --> r2
     r0 --> r3
@@ -533,17 +544,6 @@ graph TD
     r17 --> t5
     r19 --> t6
     r19 --> r20
-    subgraph tokens
-        direction LR
-        t0@{shape: rect, label: "struct"}
-        t1@{shape: rect, label: "Foo"}
-        t2@{shape: rect, label: ":"}
-        t3@{shape: rect, label: "\\n"}
-        t4@{shape: rect, label: "Indent"}
-        t5@{shape: rect, label: "-- word"}
-        t6@{shape: rect, label: "\\n"}
-        t7@{shape: rect, label: "Dedent"}
-    end
 ```
 
 

@@ -471,8 +471,6 @@ the parser infers the parse tree:
 
 ```mermaid
 graph TD
-    reductions ~~~ tokens
-    subgraph reductions
         r0@{shape: diamond, label: "module"}
         r1@{shape: diamond, label: "comment-line*"}
         r2@{shape: diamond, label: "doc-line*"}
@@ -499,7 +497,6 @@ graph TD
         r23@{shape: diamond, label: "type-definition*"}
         r24@{shape: diamond, label: "struct-field-block"}
         r25@{shape: diamond, label: "type-definition*"}
-    end
     subgraph tokens
         direction LR
         t0@{shape: rect, label: "struct"}

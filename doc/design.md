@@ -409,7 +409,7 @@ IR structure.
 
 #### Tokenization
 
-The very first stage is tokenization, also called lexical analysis.
+The very first stage is tokenization, also called lexical analysis or lexing.
 Tokenization breaks the input text into *tokens* of one or more characters.
 For example, take the string `abc+def`:
 
@@ -423,7 +423,7 @@ This will be grouped into three tokens, `abc`, `+`, and `def`:
 
 ```
 +-----------+-----+-----------+
-| abc       | +   | def       |
+|    abc    |  +  |    def    |
 | SnakeWord | "+" | SnakeWord |
 +-----------+-----+-----------+
 ```
@@ -433,13 +433,123 @@ In addition, each token is labeled with a category, such as `Documentation`,
 of characters are given a label that is just the token in double quotes, such
 as `"+"` for `+`, `"=="` for `==`, `"if"` for `if`, and so on.
 
-These category labels match names in the grammar in the next step...
+These category labels match names in the grammar in the next step.
+
+There is one extra bit of logic in the Emboss tokenizer, which mimics CPython:
+indentation is tracked and translated into special `Indent` and `Dedent`
+tokens when it changes.  This fragment:
+
+```emb
+struct Foo:
+  -- word
+```
+
+will be tokenized as:
+
+```
++----------+-----------+-----+------+--------+---------------+--------+
+|  struct  |    Foo    |  :  |  \n  |        |    -- word    |        |
+| "struct" | SnakeName | ":" | "\n" | Indent | Documentation | Dedent |
++----------+-----------+-----+------+--------+---------------+--------+
+```
 
 
 #### Parse Tree Generation
 
-The list of tokens is then passed to a [shift-reduce (also known as "LR(1)")
-parser][shift_reduce], which produces a parse tree.
+The list of tokens is then passed to a parser, which produces a parse tree.
+The point of this stage is to take the list of tokens, and apply a tree
+structure on top of it.  Starting with the tokens from the previous example:
+
+```mermaid
+graph LR
+    colon@{label: "\":\""}
+    newline@{label: "\"\\n\""}
+    struct ~~~ Foo ~~~ colon ~~~ newline ~~~ Indent ~~~ Documentation ~~~ Dedent
+```
+
+the parser infers the parse tree:
+
+```mermaid
+graph TD
+  subgraph reductions
+  r0@{shape: diamond, label: "module"}
+  r0 --> r1
+  r0 --> r2
+  r0 --> r3
+  r0 --> r4
+  r0 --> r5
+  r1@{shape: diamond, label: "comment-line*"}
+  r2@{shape: diamond, label: "doc-line*"}
+  r3@{shape: diamond, label: "import-line*"}
+  r4@{shape: diamond, label: "attribute-line*"}
+  r5@{shape: diamond, label: "type-definition*"}
+  r5 --> r6
+  r5 --> r25
+  r6@{shape: diamond, label: "type-definition"}
+  r6 --> r7
+  r7@{shape: diamond, label: "struct"}
+  r7 --> t0
+  r7 --> r8
+  r7 --> r10
+  r7 --> t2
+  r7 --> r11
+  r7 --> r12
+  r7 --> r14
+  r8@{shape: diamond, label: "type-name"}
+  r8 --> r9
+  r9@{shape: diamond, label: "type-word"}
+  r9 --> t1
+  r10@{shape: diamond, label: "delimited-parameter-definition-list?"}
+  r11@{shape: diamond, label: "Comment?"}
+  r12@{shape: diamond, label: "eol"}
+  r12 --> t3
+  r12 --> r13
+  r13@{shape: diamond, label: "comment-line*"}
+  r14@{shape: diamond, label: "struct-body"}
+  r14 --> t4
+  r14 --> r15
+  r14 --> r22
+  r14 --> r23
+  r14 --> r24
+  r14 --> t7
+  r15@{shape: diamond, label: "doc-line*"}
+  r15 --> r16
+  r15 --> r21
+  r16@{shape: diamond, label: "doc-line"}
+  r16 --> r17
+  r16 --> r18
+  r16 --> r19
+  r17@{shape: diamond, label: "doc"}
+  r17 --> t5
+  r18@{shape: diamond, label: "Comment?"}
+  r19@{shape: diamond, label: "eol"}
+  r19 --> t6
+  r19 --> r20
+  r20@{shape: diamond, label: "comment-line*"}
+  r21@{shape: diamond, label: "doc-line*"}
+  r22@{shape: diamond, label: "attribute-line*"}
+  r23@{shape: diamond, label: "type-definition*"}
+  r24@{shape: diamond, label: "struct-field-block"}
+  r25@{shape: diamond, label: "type-definition*"}
+  end
+  subgraph tokens
+    t0 ~~~ t1 ~~~ t2 ~~~ t3 ~~~ t4 ~~~ t5 ~~~ t6 ~~~ t7
+    t0@{shape: rect, label: "struct"}
+    t1@{shape: rect, label: "Foo"}
+    t2@{shape: rect, label: ":"}
+    t3@{shape: rect, label: "\\n"}
+    t4@{shape: rect, label: "Indent"}
+    t5@{shape: rect, label: "-- word"}
+    t6@{shape: rect, label: "\\n"}
+    t7@{shape: rect, label: "Dedent"}
+  end
+```
+
+
+[shift-reduce (also known as "LR(1)")
+parser][shift_reduce], 
+
+The Emboss pars
 
 
 

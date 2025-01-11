@@ -543,25 +543,296 @@ graph TD
     r19 --> r20
 ```
 
+Parsing is a large subject with many good tutorials and references available,
+so only the `embossc` specifics are covered here.
 
-[shift-reduce (also known as "LR(1)")
-parser][shift_reduce], 
+The Emboss compiler uses a [shift-reduce (also known as "LR(1)")
+parser][shift_reduce], using a [custom engine][lr1_py] that has some features
+that are not available in most other shift-reduce engines — and also some
+limitations.
 
-The Emboss pars
+[shift_reduce]: https://en.wikipedia.org/wiki/Shift-reduce_parser
+[lr1_py]: ../compiler/front_end/lr1.py
+
+The biggest limitation is that the table generator only implements the
+[canonical LR(1)][canonical_lr1] table generation algorithm, which means that
+there is no "side channel" way of specifying precedence or otherwise resolving
+conflicts — shift/reduce and reduce/reduce conflicts must be resolved by
+removing them from the grammar.  (However, Emboss's grammar uses
+partially-ordered precedence, which — as far as the author is aware — is not
+supported by any off-the-shelf precedence system.)
+
+[canonical_lr1]: https://doi.org/10.1016/S0019-9958(65)90426-2
+
+The biggest unusual feature is the incorporation of a [*Merr*][merr]-like
+system for error messages.
+
+[merr]: https://doi.org/10.1145/937563.937566
+
+The output from this stage is a *parse tree*, not an IR.
 
 
+#### Parse Tree → IR
 
-1.  Tokenization
-2.  Parse Tree Generation
-3.  Parse Tree → IR
-4.  Desugaring + Built-In Field Synthesis
-5.  Symbol Resolution Part 1: Head Symbols
-6.  Dependency Cycle Checking
-7.  Dependency Order Computation
-8.  Symbol Resolution Part 2: Field Access
-9.  Type Annotation
-10. Type Checking
-11. Bounds Computation
+Finally, the parse tree is transformed into an IR.  This is mostly a
+straightforward translation, but there are a few places where the parse tree is
+noticeably different from the IR.  For example, in the parse tree, lists are
+explicit *cons* lists, like:
+
+```mermaid:
+graph TD
+    r1@{label: "struct-field-block"}
+    r2@{label: "struct-field*"}
+    r3@{label: "struct-field"}
+    r4@{label: "struct-field*"}
+    r5@{label: "struct-field"}
+    r6@{label: "struct-field*"}
+    r7@{label: "struct-field"}
+    r8@{label: "struct-field*"}
+    r1 --> r2
+    r2 --> r3
+    r2 --> r4
+    r4 --> r5
+    r4 --> r6
+    r6 --> r7
+    r6 --> r8
+```
+
+while in the IR these lists are flattened:
+
+```mermaid:
+graph TD
+    n0@{label: "structure"}
+    n1@{label: "fields"}
+    n2@{label: "field"}
+    n3@{label: "field"}
+    n4@{label: "field"}
+    n0 --> n1
+    n1 --> n2
+    n1 --> n3
+    n1 --> n4
+```
+
+One bit of pure syntax sugar that is handled at this stage is chained
+comparisons: `a == b == c` will be translated to the IR equivalent of `a == b
+&& b == c`.
+
+
+### IR Processing
+
+#### Desugaring + Built-In Field Synthesis
+
+*[`synthetics.py`](../compiler/front_end/synthetics.py)*
+
+The first stage that operates on the IR adds built-in fields like
+`$size_in_bytes` and rewrites some constructs to a more regular form.
+Specifically, anonymous `bits` will be rewritten into non-anonymous `bits`, and
+`$next` will be replaced with the offset + size of the previous field.
+Starting with this:
+
+```emb
+struct Foo:
+    0 [+4]  bits:
+        0  [+1]  Flag  low
+        31 [+1]  Flag  high
+    if low:
+        $next [+4]  UInt  field
+```
+
+`synthetics.py` will rewrite the IR into (the equivalent of):
+
+```emb
+struct Foo:
+    bits EmbossReservedAnonymous0:
+        [text_output: "Skip"]
+        0  [+1]  Flag  low
+        31 [+1]  Flag  high
+    let $size_in_bytes = $max(0, true ? 0+4 : 0, low ? (0+4)+4 : 0)
+    let $max_size_in_bytes = $upper_bound($size_in_bytes)
+    let $min_size_in_bytes = $lower_bound($size_in_bytes)
+    0 [+4]  EmbossReservedAnonymous0  emboss_reserved_anonymous_1
+    if low:
+        0+4 [+4]  UInt  field
+    let low = emboss_reserved_anonymous_1.low
+    let high = emboss_reserved_anonymous_1.high
+```
+
+One important detail is that the newly-created nodes are marked as *synthetic*.
+This makes a difference for error handling: because of the way that some of the
+synthetic nodes are constructed from copied pieces of existing IR, errors can
+sometimes be detected in synthetic nodes before they are detected in the
+original source nodes they were copied from.  These errors tend to be very
+confusing to end users, since they reference parts of the IR that were not
+entered by an end user.  For example, the incorrect:
+
+```emb
+struct Foo:
+    false [+4]  UInt  field
+```
+
+will have a synthesized `$size_in_bytes` field:
+
+```emb
+struct Foo:
+    let $size_in_bytes = $max(0, true ? false+4 : 0)
+    false [+4]  UInt  field
+```
+
+The erroneous expression `false+4` will be detected before the top-level type
+error of using `false` as the field offset, with a message like:
+
+```
+example.emb:2:5: error: Left argument of operator '+' must be an integer.
+    false [+4]  UInt  field
+    ^^^^^
+```
+
+To avoid confusing end users, any error with a synthetic location will be
+*deferred*, and only shown to an end user if no non-synthetic errors are
+encountered during IR processing.  In this case, the correct error message will
+be found and displayed to the end user:
+
+```
+example.emb:2:5: error: Start of field must be an integer.
+    false [+4]  UInt  field
+    ^^^^^
+```
+
+
+#### Symbol Resolution Part 1: Head Symbols
+
+[*`symbol_resolver.py`*](../compiler/front_end/symbol_resolver.py)
+
+After desugaring, the first part of symbol resolution occurs: resolving *head*
+symbols.  Head symbols are any symbols that do not follow a `.`: for example,
+`head` or `Head` in `head`, `Head.field` and `head.Type.field`.  Resolution of
+symbols after `.` happens in a later stage, after some other checking.
+
+Head symbol resolution follows lexical scoping rules: a symbol may refer to
+entities in a set of *scopes* determined by their position in the source text.
+
+Head symbol resolution is straightforward: while walking down the IR tree,
+build up a list of available scopes.  When a symbol is encountered, check to
+see if that symbol is *defined* in any of the available scopes.  If it is
+defined in *exactly one* available scope, bind the symbol to that definition.
+If it is not defined, raise an error.  Emboss takes the unusual step of *also*
+raising an error if the symbol is defined in two or more scopes: in most
+computer languages, there is some scope precedence, and the highest-precedence
+definition is used.  However, this can lead to surprising, and in some cases
+*silently incorrect* results when the desired definition is *shadowed* by an
+unknown-to-the-user higher-precedence definition, so Emboss raises an error and
+requires the user to explicitly pick the correct definition.
+
+
+#### Dependency Cycle Checking
+
+[`dependency_checker.py`](../compiler/front_end/dependency_checker.py)
+
+Once head symbols have been resolved, there is enough information in the IR to
+check for cycles in the dependency graph: cases where `object_1` depends on
+`object_2` and `object_2` also depends on `object_1`, sometimes through a chain
+of multiple dependencies.
+
+The Emboss compiler accomplishes this by first building up the complete
+dependency graph of the IR, and then running a graph partitioning algorithm
+([Tarjan's algorithm][tarjan], in this case) on the dependency graph to find
+all strongly-connected components.  If there are any partitions with more than
+one node, or any nodes with a self edge, then there is a dependency cycle.
+
+[tarjan]: https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+
+
+#### Dependency Order Computation
+
+[`dependency_checker.py`](../compiler/front_end/dependency_checker.py)
+
+Every structure in the IR is also annotated with a 'dependency ordering': an
+ordering of its fields such that any field *A* that depends on another field
+*B* is later in the ordering than *B*.
+
+This ordering is not used until the back end (where it is used to order fields
+for text output), but it is convenient to build it here, where the dependency
+graph has already been built.
+
+
+#### Symbol Resolution Part 2: Field Access
+
+[*`symbol_resolver.py`*](../compiler/front_end/symbol_resolver.py)
+
+Next, "tail" symbols are resolved: any symbol immediately after `.`.  These are
+resolved after checking for dependency cycles because the resolution algorithm
+can become stuck in infinite recursion if there is a dependency cycle.
+
+
+#### Type Annotation
+
+[*`type_check.py`*](../compiler/front_end/type_check.py)
+
+With symbols resolved, it is possible to annotate expression types.  The Emboss
+compiler annotates *every* expression and subexpression with a type: at this
+stage, those types are coarse: integer, enum, boolean, string, "opaque", etc.
+
+This stage also checks expressions for *internal* type consistency.  For
+example, it will find the error in:
+
+```emb
+struct Foo:
+    let a = 10 + true
+```
+
+but not in:
+
+```emb
+struct Foo:
+    true [+4]  UInt  a
+```
+
+
+#### Type Checking
+
+[*`type_check.py`*](../compiler/front_end/type_check.py)
+
+After annotating all types, the compiler checks that expressions have the
+correct top-level types: that is, that their types are correct for their
+positions within the IR.  This is the stage that detects the use of a boolean
+as a field offset from the previous example:
+
+```emb
+struct Foo:
+    true [+4]  UInt  a
+```
+
+
+#### Bounds Computation
+
+[*`expression_bounds.py`*](../compiler/front_end/expression_bounds.py)
+
+With coarse type checking done, the expression types can be *refined* into
+narrower types: for example, instead of just "integer," "integer between 0 and
+65535, inclusive."
+
+Fully understanding this stage involves (just a tiny bit!) of Type Theory:
+mainly, that a "type" in the computer science sense is just a *set* (in the
+mathematical sense) of all the values that a variable of that type could
+possibly hold.  This sort of "type" is conflated with physical layout in most
+industrial computing languages (including Emboss), but is conceptually
+separate.
+
+The boolean type is the set {`false`, `true`}, so its only refinements
+(nonempty subsets) are {`false`} and {`true`}.  This stage will try to make
+those refinements, where possible.
+
+The base integer type in the Emboss expression language is the set of all
+integers, normally written as ℤ.  It is obviously impossible for any real-world
+computer to have a variable of type ℤ — there is no computer with infinite
+memory — so this type needs to be refined.
+
+In Emboss, currently, integer types are of the form ${x | x \exists \bbZ \and a
+\le x \le b \and x \mod m \equiv n}$: that is, x is an integer (${x \exists
+\bbZ}$), x is at least a and at most b (${a \le x \le b}$), and x % m == n (${x
+\mod m \equiv n}$).
+
+
 12. Front End Attribute Normalization + Verification
 13. Miscellaneous Constraint Checking
 14. Inferred Write Method Generation

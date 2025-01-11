@@ -827,10 +827,10 @@ integers, normally written as ℤ.  It is obviously impossible for any real-worl
 computer to have a variable of type ℤ — there is no computer with infinite
 memory — so this type needs to be refined.
 
-In Emboss, currently, integer types are of the form ${ \{ x | x \in \mathbb{Z}
-\wedge a \le x \le b \wedge x \equiv n \pmod m \} }$: that is, x is an integer
-($x \in \mathbb{Z}$), x is at least a and at most b ($a \le x \le b$), and x %
-m == n ($x \equiv n \pmod m$).
+In Emboss, currently, integer types are of the form $\left\{ x | x \in
+\mathbb{Z} \wedge a \le x \le b \wedge x \equiv n \pmod m \right\}$: that is, x
+is an integer ($x \in \mathbb{Z}$), x is at least a and at most b ($a \le x \le
+b$), and x % m == n ($x \equiv n \pmod m$).
 
 
 12. Front End Attribute Normalization + Verification
